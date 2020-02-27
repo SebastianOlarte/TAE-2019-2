@@ -1,0 +1,265 @@
+---
+title: "TAE"
+author: 'Jefferson Gamboa Betancur, CC: 1036654273'
+date: "11/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Demografía
+
+La demografía es un estudio, donde el interés principal es obtener información del comportamiento de las población, de cómo evolucionan y estructuran en base a análisis estadístico.
+
+Referente a esto, se tomó una base de [datos abiertos del portal MEdata](http://medata.gov.co/) sobre la [Encuesta Calidad de Vida](http://medata.gov.co/dataset/encuesta-calidad-de-vida) en base a las 342 preguntas que se le realizarón a los habitantes desde año 2011 hasta el año 2018, en base a esto se realizará el estudio demográfico en base a el último año de encuesta.
+
+Se pretende estudiar el comportamiento de la población en frente a los estratos socioeconómicos. 
+
+
+### Librerías
+```{r, warning = FALSE, message = FALSE}
+require(data.table)
+require(ggplot2)
+require(tidyverse)
+library(htmlwidgets)
+library(maptools)
+library(udunits2)
+library(rgdal)
+library(leaflet)
+```
+
+```{r, message = FALSE, warning = FALSE}
+ECvida <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-99,-98, -77),select = c("encuesta_calidad.año", "encuesta_calidad.barrio", "encuesta_calidad.p_10", "encuesta_calidad.p_12", "encuesta_calidad.p_15", "encuesta_calidad.p_18", "encuesta_calidad.p_20", "encuesta_calidad.p_23", "encuesta_calidad.p_24", "encuesta_calidad.p_308"))
+
+#Corregir nombres de los barrios
+
+str_replace(ECvida$encuesta_calidad.barrio, "ANDALUCIA", "ANDALUCÍA") %>%
+str_replace("Nº 2", "NO.2") %>% 
+  str_replace("Nº 1", "NO.1") %>% 
+  str_replace("Nº 3", "NO.3") %>%
+  str_replace("AREA EXPANSION", "ÁREA DE EXPANSIÓN") %>%
+  str_replace("EXPANCION", "EXPANSIÓN") %>% 
+  str_replace("AREA", "ÁREA") %>% 
+  str_replace("BOMBONA", "BOMBONÁ") %>% 
+  str_replace("LA ASOMADERA", "ASOMADERA") %>%
+  str_replace("BELALCAZAR", "BELALCÁZAR") %>% 
+  str_replace("CALAZANS", "CALASANZ") %>% 
+  str_replace("COLON", "COLÓN") %>% 
+  str_replace("MIRA FLORES", "MIRAFLORES") %>% 
+  str_replace("BARRIO FACULTAD DE MINAS", "FACULTAD DE MINAS") %>% 
+  str_replace("CABECERA SAN ANT DE PR.", "SAN ANTONIO DE PRADO") %>% 
+  str_replace("CARLOS E RESTREPO", "CARLOS E. RESTREPO") %>% 
+  str_replace("URQUITA", "URQUITÁ") %>% 
+  str_replace("LOS CERROS EL VERJEL", "LOS CERROS EL VERGEL") %>% 
+  str_replace("CAYCEDO", "CAICEDO") %>% 
+  str_replace("VALDES", "VALDÉS") %>% 
+  str_replace("CERRO EL VOLADOR", "B. CERRO EL VOLADOR") %>% 
+  str_replace("MOSCU", "MOSCÚ") %>% 
+  str_replace("JOSELA", "JOSÉ LA") %>%
+  str_replace("JOSE", "JOSÉ") %>% 
+  str_replace("EL YOLOMBO", "YOLOMBO") %>% 
+  str_replace("PIEDRAS BLANCAS", "PIEDRAS BLANCAS - MATASANO") %>% 
+  str_replace("BASILIA", "BRASILIA") %>% 
+  str_replace("VILLA TINA", "VILLATINA") %>% 
+  str_replace("LILIAM", "LILLIAM") %>% 
+  str_replace("BOLIVAR", "BOLÍVAR") %>% 
+  str_replace("CORREGIMIENTO PALMITAS", "PALMITAS SECTOR CENTRAL") %>% 
+  str_replace("INES", "INÉS") %>% 
+  str_replace("FE", "FÉ") %>% 
+  str_replace("LUCIA", "LUCÍA") %>% 
+  str_replace("SABIO", "SAVIO") %>% 
+  str_replace("BERMEJAL- LOS ÁLAMOS", "BERMEJAL-LOS ÁLAMOS") %>% 
+  str_replace("BOLÍVARIANA", "BOLIVARIANA") %>% 
+  str_replace("EL NOGAL - LOS ALMENDROS", "EL NOGAL-LOS ALMENDROS") %>% 
+  str_replace("JUAN XXIII - LA QUIEBRA", "JUAN XXIII LA QUIEBRA") %>% 
+  str_replace("PROGRESO  Nº 2", "EL PROGRESO") %>% 
+  str_replace("MARIA", "MARÍA") %>% 
+  str_replace("PLAYÓN", "PLAYON") %>% 
+  str_replace("EL SOCORRO / LA GABRIELA", "EL SOCORRO") %>% 
+  str_replace("FÉRRINI", "FERRINI") %>% 
+  str_replace("LA CANDE LARIA", "LA CANDELARIA") %>%
+  str_replace("EL PLAYON", "PLAYÓN") %>%
+  str_replace("IGUANA", "IGUANÁ") %>%
+  str_replace("MARÍA CANO - CARAMBOLAS", "MARÍA CANO-CARAMBOLAS") %>%
+  str_replace("DE ABURRA", "DEL ABURRÁ") %>%
+  str_replace("ALTAVISTA CENTRAL", "ALTAVISTA SECTOR CENTRAL") %>%
+  str_replace("SECTOR CENTRAL", "CENTRO ADMINISTRATIVO") %>%
+  str_replace("ALTAVISTA CENTRO ADMINISTRATIVO", "ALTAVISTA SECTOR CENTRAL") %>%
+  str_replace("SANTA ELENA CENTRO ADMINISTRATIVO", "SANTA ELENA SECTOR CENTRAL") %>%
+  str_replace("PALMITAS CENTRO ADMINISTRATIVO", "PALMITAS SECTOR CENTRAL") %>%  
+  str_replace("PROGRESO", "EL PROGRESO")
+
+
+names(ECvida) <- c("año", "barrio", "p_10", "p_12", "p_15", "p_18", "p_20", "p_23", "p_24", "p_308")
+```
+
+**Filtrando Base por el año 2018**
+
+```{r}
+ECvida <- ECvida[año == 2018,]
+```
+
+
+**Conteo de valores "NULL" en la base de datos de 2018**
+
+```{r}
+colSums(is.na(ECvida))
+dim(ECvida)
+```
+
+Resumen de las variables
+
+```{r}
+summary(ECvida[,c(-1,-2)])
+```
+
+Como las respuestas negativas son de No sabe (-98) y no responde (-99) y no aplica (-88) se aglomeran como NA's ya que estas observaciones no representan información de interés, aparte de eso, estos valores representan en gran medida la base de datos y al realizar los análisis tendrían un gran conflicto en los resultados, es por ello que estas otras covariables se beran hacer en un análisis aparte.
+
+### Preguntas
+
+¿Será que el número promedio de personas que viven por barrio tendrá diferencia significativa por estrato, discriminando por género?
+
+```{r}
+plot(ECvida$p_12 ~ ECvida$p_18, col = ECvida$p_308 + 7, ylab = "Número de personas por hogar", xlab = "Años", pch = c(18,19))
+grid()
+```
+
+
+**Categorizando por barrio**
+
+```{r}
+#Estrato promedio por barrio
+#Estrato.M <- tapply(ECvida$p_10, ECvida$barrio, mean, na.rm = TRUE)
+Estrato.M <- table(ECvida[,c("barrio", "p_10")])
+Estrato.M <- prop.table(Estrato.M)
+colnames(Estrato.M) <-  c("Estrato1", "Estrato2", "Estrato3", "Estrato4", "Estrato5", "Estrato6")
+
+#Personas promedio que componen el hogar
+Personas.M <- tapply(ECvida$p_12, ECvida$barrio, mean, na.rm = TRUE)
+
+#Sexo promedio (TENER CUIDADO)
+#Sexo.M <- tapply(ECvida$p_15, ECvida$barrio, mean, na.rm = TRUE)
+Sexo.M  <- table(ECvida[,c("barrio", "p_15")])
+Sexo.M <- prop.table(Sexo.M)
+colnames(Sexo.M) <- c("Hombre", "Mujer")
+
+
+#Edad promedio porbarrio
+Edad.M <- tapply(ECvida$p_18, ECvida$barrio, mean, na.rm = TRUE)
+
+#Estado civil promedio por barrio
+#EstadoC.M <- tapply(ECvida$p_20, ECvida$barrio, mean, na.rm = TRUE)
+EstadoC.M  <- table(ECvida[,c("barrio", "p_20")])                     
+EstadoC.M <- prop.table(EstadoC.M)
+colnames(EstadoC.M) <- c("Soltero", "Casado", "Viudo", "Separ_Divorsia", "NC_Menos2a", "NC_Mas2a")
+
+#Etnia promedio por barrio
+#Etnia.M <- tapply(ECvida$p_23, ECvida$barrio, mean, na.rm = TRUE)
+Etnia.M  <- table(ECvida[,c("barrio", "p_23")])                     
+Etnia.M <- prop.table(Etnia.M)
+colnames(Etnia.M) <- c("Indigena", "Negro_Mulato", "Mestizo", "Blanco", "Raizal_Sanandresano","Rom_Gitano")
+
+#Ha vivido toda la vida en este municipio en promedio
+#TiempoV.M <- tapply(ECvida$p_24, ECvida$barrio, mean, na.rm = TRUE)
+TiempoV.M  <- table(ECvida[,c("barrio", "p_24")])                     
+TiempoV.M <- prop.table(TiempoV.M)
+colnames(TiempoV.M) <- c("SI", "NO")
+```
+
+Estructuración de la base de datos
+
+```{r}
+#ECvida2 <- data.frame(Extracto.M, Personas.M, Sexo.M, Edad.M, EstadoC.M, Etnia.M, TiempoV.M)
+
+#Datos completos, agregando las observaciones faltantes
+ECvida2.1 <- cbind(Estrato.M, Personas.M, Sexo.M, Edad.M, EstadoC.M, Etnia.M, TiempoV.M)
+
+#Datos con las observaciones que no tienen valores faltantes
+ECvida2.2 <- cbind(Estrato.M, Personas.M, Sexo.M, Edad.M, EstadoC.M)
+
+
+```
+
+**Matriz normalizada**
+
+```{r}
+ECvida3.1 <- scale(ECvida2.1)
+ECvida3.2 <- scale(ECvida2.2, center = TRUE, scale = TRUE)
+```
+
+```
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+# Misma gráfica anterior pero con los datos escalados:
+pairs(ECvida3.2[,8:16], lower.panel = panel.smooth, upper.panel = panel.cor,
+      gap = 0, row1attop = FALSE)
+names(as.data.frame(ECvida3.2))
+```
+
+
+Haciendo los cluster
+
+```{r}
+library(ClustOfVar)
+Dendograma <- hclustvar(ECvida3.2)
+#Dendograma <- hclust(dist(ECvida3.2))
+plot(Dendograma)
+rect.hclust(Dendograma, k = 2, border = 2:10)
+```
+
+```{r, message = F}
+library(factoextra)
+au <- prcomp(ECvida3.2)
+fviz_eig(au)
+fviz_nbclust(x = ECvida3.2, FUNcluster = kmeans, method = "silhouette" )
+```
+
+
+El número optimo de grupos serían dos.
+
+#Mapas
+
+```{r}
+##Mapas
+#Leer Archivo que contiene informacion geografica de los barrios y veredas de Medellín 
+barrios_med <- readOGR(dsn = "C:\\Users\\jfsgb\\Google Drive\\Universidad Nacional de Colombia\\11. Onceavo semestre_\\TAE\\Trabajo n° 1\\Barrio_Vereda\\Barrio_Vereda.shp", layer = "Barrio_Vereda", encoding = "UTF-8")
+nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
+```
+
+```{r}
+#Mapa simple
+m <- leaflet(barrios_med)
+m <- addTiles(m)
+```
+
+```{r}
+#Superoponemos los barrios
+m <- addPolygons(m, popup = nombres_barrios)
+m <- addTiles(m)
+```
+
+```{r, warning=FALSE, message=FALSE,}
+#Color a los barrios
+colores <- sample(x = c("orange", "green", "yellow"), size = length(nombres_barrios), replace = TRUE)
+m <- addPolygons(m, popup = Dendograma, color = colores)
+m
+```

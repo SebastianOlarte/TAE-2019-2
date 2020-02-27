@@ -1,0 +1,511 @@
+pregunta;descripcionpregunta;valorpregunta;descripcionvalorpregunta
+P_1;Remplazo;1;Si
+P_1;Remplazo;2;No
+P_2;Causa de Remplazo;-88;No aplica
+P_2;Causa de Remplazo;1;Direccion inexistente
+P_2;Causa de Remplazo;2;Vivienda desocupada
+P_2;Causa de Remplazo;3;Personas ausentes
+P_2;Causa de Remplazo;4;No hay informante calificado
+P_2;Causa de Remplazo;5;Rechazo
+P_2;Causa de Remplazo;6;No es vivienda
+P_2;Causa de Remplazo;7;La Direccion no corresponde
+P_2;Causa de Remplazo;8;No corresponde al Estrato
+P_2;Causa de Remplazo;9;Problemas de orden pi∫blico
+P_2;Causa de Remplazo;10;Vivienda demolida
+P_3;Fecha visita;NULL;NULL
+P_4;Codigo de municipio;5001;MEDELLiçN
+P_5;Zona;1;Cabecera -Urbana
+P_5;Zona;2;Centro poblado- Rural
+P_5;Zona;3;Rural disperso- Rural
+P_6;Comunas de Medelli≠n;1;1. Popular
+P_6;Comunas de Medelli≠n;2;2. Santa Cruz
+P_6;Comunas de Medelli≠n;3;3. Manrique
+P_6;Comunas de Medelli≠n;4;4. Aranjuez
+P_6;Comunas de Medelli≠n;5;5. Castilla
+P_6;Comunas de Medelli≠n;6;6. Doce de Octubre
+P_6;Comunas de Medelli≠n;7;7. Robledo
+P_6;Comunas de Medelli≠n;8;8. Villa Hermosa
+P_6;Comunas de Medelli≠n;9;9. Buenos Aires
+P_6;Comunas de Medelli≠n;10;10. La Candelaria
+P_6;Comunas de Medelli≠n;11;11. Laureles Estadio
+P_6;Comunas de Medelli≠n;12;12. La America
+P_6;Comunas de Medelli≠n;13;13. San Javier
+P_6;Comunas de Medelli≠n;14;14. El Poblado
+P_6;Comunas de Medelli≠n;15;15. Guayabal
+P_6;Comunas de Medelli≠n;16;16. Belen
+P_6;Comunas de Medelli≠n;50;50. Palmitas
+P_6;Comunas de Medelli≠n;60;60. San Cristobal
+P_6;Comunas de Medelli≠n;70;70. Altavista
+P_6;Comunas de Medelli≠n;80;80. San Antonio de Prado
+P_6;Comunas de Medelli≠n;90;90. Santa Elena
+P_7;Codigo del barrio o vereda;-99;No responde
+P_7;Codigo del barrio o vereda;-98;No sabe
+P_7;Codigo del barrio o vereda;-88;No aplica
+P_7;Codigo del barrio o vereda;101;SANTO DOMINGO SABIO N¬∫ 1
+P_7;Codigo del barrio o vereda;102;SANTO DOMINGO SABIO N¬∫ 2
+P_7;Codigo del barrio o vereda;103;POPULAR
+P_7;Codigo del barrio o vereda;104;GRANIZAL
+P_7;Codigo del barrio o vereda;105;MOSCu N¬∫ 2
+P_7;Codigo del barrio o vereda;106;VILLA GUADALUPE
+P_7;Codigo del barrio o vereda;107;SAN PABLO
+P_7;Codigo del barrio o vereda;108;EL COMPROMISO
+P_7;Codigo del barrio o vereda;109;ALDEA PABLO VI
+P_7;Codigo del barrio o vereda;110;LA ESPERANZA N¬∫ 2
+P_7;Codigo del barrio o vereda;111;LA AVANZADA
+P_7;Codigo del barrio o vereda;112;CARPINELO
+P_7;Codigo del barrio o vereda;201;LA ISLA
+P_7;Codigo del barrio o vereda;202;EL PLAY”N DE LOS COMUNEROS
+P_7;Codigo del barrio o vereda;203;PABLO VI
+P_7;Codigo del barrio o vereda;204;LA FRONTERA
+P_7;Codigo del barrio o vereda;205;LA FRANCIA
+P_7;Codigo del barrio o vereda;206;ANDALUCiçA
+P_7;Codigo del barrio o vereda;207;VILLA DEL SOCORRO
+P_7;Codigo del barrio o vereda;208;VILLA NIZA
+P_7;Codigo del barrio o vereda;209;MOSCu N¬∫ 1
+P_7;Codigo del barrio o vereda;210;SANTA CRUZ
+P_7;Codigo del barrio o vereda;211;LA ROSA
+P_7;Codigo del barrio o vereda;301;LA SALLE
+P_7;Codigo del barrio o vereda;302;LAS GRANJAS
+P_7;Codigo del barrio o vereda;303;CAMPO VALDES N¬∫ 2
+P_7;Codigo del barrio o vereda;304;SANTA INES
+P_7;Codigo del barrio o vereda;305;EL RAIZAL
+P_7;Codigo del barrio o vereda;306;EL POMAR
+P_7;Codigo del barrio o vereda;307;MANRIQUE CENTRAL N¬∫ 2
+P_7;Codigo del barrio o vereda;308;MANRIQUE ORIENTAL
+P_7;Codigo del barrio o vereda;309;VERSALLES N¬∫ 1
+P_7;Codigo del barrio o vereda;310;VERSALLES N¬∫ 2
+P_7;Codigo del barrio o vereda;311;LA CRUZ
+P_7;Codigo del barrio o vereda;312;ORIENTE
+P_7;Codigo del barrio o vereda;313;MARiçA CANO-CARAMBOLAS
+P_7;Codigo del barrio o vereda;314;SAN JOSE LA CIMA N¬∫ 1
+P_7;Codigo del barrio o vereda;315;SAN JOSE LA CIMA N¬∫ 2
+P_7;Codigo del barrio o vereda;401;BERLiçN
+P_7;Codigo del barrio o vereda;402;SAN ISIDRO
+P_7;Codigo del barrio o vereda;403;PALERMO
+P_7;Codigo del barrio o vereda;404;BERMEJAL-LOS iÅLAMOS
+P_7;Codigo del barrio o vereda;405;MORAVIA
+P_7;Codigo del barrio o vereda;407;SEVILLA
+P_7;Codigo del barrio o vereda;408;SAN PEDRO
+P_7;Codigo del barrio o vereda;409;MANRIQUE CENTRAL N¬∫ 1
+P_7;Codigo del barrio o vereda;410;CAMPO VALDES N¬∫ 1
+P_7;Codigo del barrio o vereda;411;LAS ESMERALDAS
+P_7;Codigo del barrio o vereda;412;LA PI—UELA
+P_7;Codigo del barrio o vereda;413;ARANJUEZ
+P_7;Codigo del barrio o vereda;414;BRASILIA
+P_7;Codigo del barrio o vereda;415;MIRANDA
+P_7;Codigo del barrio o vereda;501;TOSCANA
+P_7;Codigo del barrio o vereda;502;LAS BRISAS
+P_7;Codigo del barrio o vereda;503;FLORENCIA
+P_7;Codigo del barrio o vereda;504;TEJELO
+P_7;Codigo del barrio o vereda;505;BOYACiÅ
+P_7;Codigo del barrio o vereda;507;HECTOR ABAD G”MEZ
+P_7;Codigo del barrio o vereda;508;BELALCiÅZAR
+P_7;Codigo del barrio o vereda;509;GIRARDOT
+P_7;Codigo del barrio o vereda;510;TRICENTENARIO
+P_7;Codigo del barrio o vereda;511;CASTILLA
+P_7;Codigo del barrio o vereda;513;FRANCISCO ANTONIO ZEA
+P_7;Codigo del barrio o vereda;514;ALFONSO L”PEZ
+P_7;Codigo del barrio o vereda;517;CARIBE
+P_7;Codigo del barrio o vereda;519;EL PROGRESO
+P_7;Codigo del barrio o vereda;601;SANTANDER
+P_7;Codigo del barrio o vereda;602;DOCE DE OCTUBRE N¬∫ 1
+P_7;Codigo del barrio o vereda;603;DOCE DE OCTUBRE N¬∫ 2
+P_7;Codigo del barrio o vereda;604;PEDREGAL
+P_7;Codigo del barrio o vereda;605;LA ESPERANZA
+P_7;Codigo del barrio o vereda;606;SAN MARTiçN DE PORRES
+P_7;Codigo del barrio o vereda;607;KENNEDY
+P_7;Codigo del barrio o vereda;608;PICACHO
+P_7;Codigo del barrio o vereda;609;PICACHITO
+P_7;Codigo del barrio o vereda;610;MIRADOR DEL DOCE
+P_7;Codigo del barrio o vereda;611;PROGRESO ¬†N¬∫ 2
+P_7;Codigo del barrio o vereda;612;EL TRIUNFO
+P_7;Codigo del barrio o vereda;702;CERRO EL VOLADOR
+P_7;Codigo del barrio o vereda;703;SAN GERMiÅN
+P_7;Codigo del barrio o vereda;705;FACULTAD DE MINAS UNIVERSIDAD NACIONAL
+P_7;Codigo del barrio o vereda;706;LA PILARICA
+P_7;Codigo del barrio o vereda;707;BOSQUES DE SAN PABLO
+P_7;Codigo del barrio o vereda;708;ALTAMIRA
+P_7;Codigo del barrio o vereda;709;C”RDOBA
+P_7;Codigo del barrio o vereda;710;L”PEZ DE  MESA
+P_7;Codigo del barrio o vereda;711;EL DIAMANTE
+P_7;Codigo del barrio o vereda;712;AURES N¬∫ 2
+P_7;Codigo del barrio o vereda;713;AURES N¬∫ 1
+P_7;Codigo del barrio o vereda;714;BELLO HORIZONTE
+P_7;Codigo del barrio o vereda;715;VILLA FLORA
+P_7;Codigo del barrio o vereda;716;PALENQUE
+P_7;Codigo del barrio o vereda;717;ROBLEDO
+P_7;Codigo del barrio o vereda;718;CUCARACHO
+P_7;Codigo del barrio o vereda;719;FUENTE CLARA
+P_7;Codigo del barrio o vereda;720;SANTA MARGARITA
+P_7;Codigo del barrio o vereda;722;OLAYA HERRERA
+P_7;Codigo del barrio o vereda;723;PAJARITO
+P_7;Codigo del barrio o vereda;724;MONTECLARO
+P_7;Codigo del barrio o vereda;725;NUEVA VILLA DE LA IGUANiÅ
+P_7;Codigo del barrio o vereda;801;VILLA HERMOSA
+P_7;Codigo del barrio o vereda;802;LA MANSI”N
+P_7;Codigo del barrio o vereda;803;SAN MIGUEL
+P_7;Codigo del barrio o vereda;804;LA LADERA
+P_7;Codigo del barrio o vereda;805;BATALL”N GIRARDOT
+P_7;Codigo del barrio o vereda;806;LLANADITAS
+P_7;Codigo del barrio o vereda;807;LOS MANGOS
+P_7;Codigo del barrio o vereda;808;ENCISO
+P_7;Codigo del barrio o vereda;809;SUCRE
+P_7;Codigo del barrio o vereda;810;EL PINAL
+P_7;Codigo del barrio o vereda;811;TRECE DE NOVIEMBRE
+P_7;Codigo del barrio o vereda;812;LA LIBERTAD
+P_7;Codigo del barrio o vereda;813;VILLATINA
+P_7;Codigo del barrio o vereda;814;SAN ANTONIO
+P_7;Codigo del barrio o vereda;815;LAS ESTANCIAS
+P_7;Codigo del barrio o vereda;816;VILLA TURBAY
+P_7;Codigo del barrio o vereda;817;LA SIERRA
+P_7;Codigo del barrio o vereda;819;VILLA LILLIAM
+P_7;Codigo del barrio o vereda;901;JUAN PABLO II
+P_7;Codigo del barrio o vereda;902;BARRIOS DE JESuS
+P_7;Codigo del barrio o vereda;903;BOMBONiÅ N¬∫ 2
+P_7;Codigo del barrio o vereda;904;LOS CERROS EL VERGEL
+P_7;Codigo del barrio o vereda;905;ALEJANDRO ECHAVARRiçA
+P_7;Codigo del barrio o vereda;906;BARRIO CAICEDO
+P_7;Codigo del barrio o vereda;907;BUENOS AIRES
+P_7;Codigo del barrio o vereda;908;MIRAFLORES
+P_7;Codigo del barrio o vereda;909;CATALU—A
+P_7;Codigo del barrio o vereda;910;LA MILAGROSA
+P_7;Codigo del barrio o vereda;911;GERONA
+P_7;Codigo del barrio o vereda;912;EL SALVADOR
+P_7;Codigo del barrio o vereda;913;LORETO
+P_7;Codigo del barrio o vereda;914;LA ASOMADERA N¬∫ 1
+P_7;Codigo del barrio o vereda;915;LA ASOMADERA N¬∫ 2
+P_7;Codigo del barrio o vereda;916;LA ASOMADERA N¬∫ 3
+P_7;Codigo del barrio o vereda;917;OCHO DE MARZO
+P_7;Codigo del barrio o vereda;1001;PRADO
+P_7;Codigo del barrio o vereda;1003;JESuS NAZARENO
+P_7;Codigo del barrio o vereda;1004;EL CHAGUALO
+P_7;Codigo del barrio o vereda;1005;ESTACI”N VILLA
+P_7;Codigo del barrio o vereda;1006;SAN BENITO
+P_7;Codigo del barrio o vereda;1007;GUAYAQUIL
+P_7;Codigo del barrio o vereda;1008;CORAZ”N DE JESuS
+P_7;Codigo del barrio o vereda;1011;CALLE NUEVA
+P_7;Codigo del barrio o vereda;1013;BARRIO COL”N
+P_7;Codigo del barrio o vereda;1014;LAS PALMAS
+P_7;Codigo del barrio o vereda;1015;BOMBONiÅ N¬∫ 1
+P_7;Codigo del barrio o vereda;1016;BOSTON
+P_7;Codigo del barrio o vereda;1017;LOS iÅNGELES
+P_7;Codigo del barrio o vereda;1018;VILLA NUEVA
+P_7;Codigo del barrio o vereda;1019;LA CANDELARIA
+P_7;Codigo del barrio o vereda;1020;SAN DIEGO
+P_7;Codigo del barrio o vereda;1101;CARLOS E. RESTREPO
+P_7;Codigo del barrio o vereda;1102;SURAMERICANA
+P_7;Codigo del barrio o vereda;1103;NARANJAL
+P_7;Codigo del barrio o vereda;1104;SAN JOAQUiçN
+P_7;Codigo del barrio o vereda;1105;LOS CONQUISTADORES
+P_7;Codigo del barrio o vereda;1107;BOLIVARIANA
+P_7;Codigo del barrio o vereda;1108;LAURELES
+P_7;Codigo del barrio o vereda;1109;LAS ACACIAS
+P_7;Codigo del barrio o vereda;1110;LA CASTELLANA
+P_7;Codigo del barrio o vereda;1111;LORENA
+P_7;Codigo del barrio o vereda;1112;EL VEL”DROMO
+P_7;Codigo del barrio o vereda;1113;ESTADIO
+P_7;Codigo del barrio o vereda;1114;LOS COLORES
+P_7;Codigo del barrio o vereda;1115;CUARTA BRIGADA
+P_7;Codigo del barrio o vereda;1117;FLORIDA NUEVA
+P_7;Codigo del barrio o vereda;1201;FERRINI
+P_7;Codigo del barrio o vereda;1202;CALASANZ
+P_7;Codigo del barrio o vereda;1203;LOS PINOS
+P_7;Codigo del barrio o vereda;1204;LA AMERICA
+P_7;Codigo del barrio o vereda;1205;LA FLORESTA
+P_7;Codigo del barrio o vereda;1206;SANTA LUCiçA
+P_7;Codigo del barrio o vereda;1207;EL DANUBIO
+P_7;Codigo del barrio o vereda;1208;CAMPO ALEGRE
+P_7;Codigo del barrio o vereda;1209;SANTA M”NICA
+P_7;Codigo del barrio o vereda;1210;BARRIO CRIST”BAL
+P_7;Codigo del barrio o vereda;1211;SIM”N BOLiçVAR
+P_7;Codigo del barrio o vereda;1212;SANTA TERESITA
+P_7;Codigo del barrio o vereda;1213;CALASANZ PARTE ALTA
+P_7;Codigo del barrio o vereda;1214;CALASANZ PARTE ALTA AE
+P_7;Codigo del barrio o vereda;1301;EL PESEBRE
+P_7;Codigo del barrio o vereda;1302;BLANQUIZAL
+P_7;Codigo del barrio o vereda;1303;SANTA ROSA DE LIMA
+P_7;Codigo del barrio o vereda;1304;LOS ALCiÅZARES
+P_7;Codigo del barrio o vereda;1305;METROPOLITANO
+P_7;Codigo del barrio o vereda;1306;LA PRADERA
+P_7;Codigo del barrio o vereda;1307;JUAN XXIII LA QUIEBRA
+P_7;Codigo del barrio o vereda;1308;SAN JAVIER N¬∫ 2
+P_7;Codigo del barrio o vereda;1309;SAN JAVIER N¬∫ 1
+P_7;Codigo del barrio o vereda;1310;VEINTE DE JULIO
+P_7;Codigo del barrio o vereda;1311;BELENCITO
+P_7;Codigo del barrio o vereda;1312;BETANIA
+P_7;Codigo del barrio o vereda;1313;EL CORAZ”N
+P_7;Codigo del barrio o vereda;1314;LAS INDEPENDENCIAS
+P_7;Codigo del barrio o vereda;1315;NUEVOS CONQUISTADORES
+P_7;Codigo del barrio o vereda;1316;EL SALADO
+P_7;Codigo del barrio o vereda;1317;EDUARDO SANTOS
+P_7;Codigo del barrio o vereda;1318;ANTONIO NARI—O
+P_7;Codigo del barrio o vereda;1319;EL SOCORRO
+P_7;Codigo del barrio o vereda;1401;BARRIO COLOMBIA
+P_7;Codigo del barrio o vereda;1403;VILLA CARLOTA
+P_7;Codigo del barrio o vereda;1404;CASTROPOL
+P_7;Codigo del barrio o vereda;1405;LALINDE
+P_7;Codigo del barrio o vereda;1406;LAS LOMAS N¬∫ 1
+P_7;Codigo del barrio o vereda;1407;LAS LOMAS N¬∫ 2
+P_7;Codigo del barrio o vereda;1408;ALTOS DEL POBLADO
+P_7;Codigo del barrio o vereda;1409;EL TESORO
+P_7;Codigo del barrio o vereda;1410;LOS NARANJOS
+P_7;Codigo del barrio o vereda;1411;LOS BALSOS N¬∫ 1
+P_7;Codigo del barrio o vereda;1412;SAN LUCAS
+P_7;Codigo del barrio o vereda;1413;EL DIAMANTE N¬∫ 2
+P_7;Codigo del barrio o vereda;1414;EL CASTILLO
+P_7;Codigo del barrio o vereda;1415;LOS BALSOS N¬∫ 2
+P_7;Codigo del barrio o vereda;1416;ALEJANDRiçA
+P_7;Codigo del barrio o vereda;1417;LA FLORIDA
+P_7;Codigo del barrio o vereda;1418;EL POBLADO
+P_7;Codigo del barrio o vereda;1419;MANILA
+P_7;Codigo del barrio o vereda;1420;ASTORGA
+P_7;Codigo del barrio o vereda;1421;PATIO BONITO
+P_7;Codigo del barrio o vereda;1422;LA AGUACATALA
+P_7;Codigo del barrio o vereda;1423;SANTA MARiçA DE LOS iÅNGELES
+P_7;Codigo del barrio o vereda;1503;TRINIDAD
+P_7;Codigo del barrio o vereda;1504;SANTA FE
+P_7;Codigo del barrio o vereda;1507;CAMPO AMOR
+P_7;Codigo del barrio o vereda;1509;CRISTO REY
+P_7;Codigo del barrio o vereda;1510;GUAYABAL
+P_7;Codigo del barrio o vereda;1511;LA COLINA
+P_7;Codigo del barrio o vereda;1601;FiÅTIMA
+P_7;Codigo del barrio o vereda;1602;ROSALES
+P_7;Codigo del barrio o vereda;1603;BELEN
+P_7;Codigo del barrio o vereda;1604;GRANADA
+P_7;Codigo del barrio o vereda;1605;SAN BERNARDO
+P_7;Codigo del barrio o vereda;1606;LAS PLAYAS
+P_7;Codigo del barrio o vereda;1607;DIEGO ECHAVARRiçA
+P_7;Codigo del barrio o vereda;1608;LA MOTA
+P_7;Codigo del barrio o vereda;1609;LA HONDONADA
+P_7;Codigo del barrio o vereda;1610;EL RINC”N
+P_7;Codigo del barrio o vereda;1611;LA LOMA DE LOS BERNAL
+P_7;Codigo del barrio o vereda;1612;LA GLORIA
+P_7;Codigo del barrio o vereda;1613;ALTAVISTA
+P_7;Codigo del barrio o vereda;1614;LA PALMA
+P_7;Codigo del barrio o vereda;1615;LOS ALPES
+P_7;Codigo del barrio o vereda;1616;LAS VIOLETAS
+P_7;Codigo del barrio o vereda;1617;LAS MERCEDES
+P_7;Codigo del barrio o vereda;1618;NUEVA VILLA DEL ABURRiÅ
+P_7;Codigo del barrio o vereda;1619;MIRAVALLE
+P_7;Codigo del barrio o vereda;1620;EL NOGAL-LOS ALMENDROS
+P_7;Codigo del barrio o vereda;1621;CERRO NUTIBARA
+P_7;Codigo del barrio o vereda;1694;iÅREA DE EXPANSI”N EL NORAL
+P_7;Codigo del barrio o vereda;1695;iÅREA DE EXPANSI”N ALTAVISTA
+P_7;Codigo del barrio o vereda;1696;iÅREA DE EXPANSI”N BELEN RINC”N
+P_7;Codigo del barrio o vereda;5000;CORREGIMIENTO PALMITAS
+P_7;Codigo del barrio o vereda;5001;LA SUIZA
+P_7;Codigo del barrio o vereda;5002;LA SUCIA
+P_7;Codigo del barrio o vereda;5003;URQUITiÅ
+P_7;Codigo del barrio o vereda;5004;PALMITAS SECTOR CENTRAL
+P_7;Codigo del barrio o vereda;5005;VOLCANA GUAYABAL
+P_7;Codigo del barrio o vereda;5006;LA FRISOLA
+P_7;Codigo del barrio o vereda;5007;LA ALDEA
+P_7;Codigo del barrio o vereda;5008;POTRERA MISERENGA
+P_7;Codigo del barrio o vereda;6000;CABECERA SAN CRIST”BAL
+P_7;Codigo del barrio o vereda;6001;LA PALMA
+P_7;Codigo del barrio o vereda;6002;EL PATIO
+P_7;Codigo del barrio o vereda;6003;EL UVITO
+P_7;Codigo del barrio o vereda;6004;LA CUCHILLA
+P_7;Codigo del barrio o vereda;6005;NARANJAL
+P_7;Codigo del barrio o vereda;6006;BOQUER”N
+P_7;Codigo del barrio o vereda;6007;SAN JOSE DE LA MONTA—A
+P_7;Codigo del barrio o vereda;6008;LA ILUSI”N
+P_7;Codigo del barrio o vereda;6009;YOLOMBO
+P_7;Codigo del barrio o vereda;6010;EL CARMELO
+P_7;Codigo del barrio o vereda;6011;EL PICACHO
+P_7;Codigo del barrio o vereda;6012;PAJARITO
+P_7;Codigo del barrio o vereda;6013;PEDREGAL ALTO
+P_7;Codigo del barrio o vereda;6014;LA LOMA
+P_7;Codigo del barrio o vereda;6015;LAS PLAYAS
+P_7;Codigo del barrio o vereda;6016;TRAVESiçAS
+P_7;Codigo del barrio o vereda;6017;EL LLANO
+P_7;Codigo del barrio o vereda;6018;SAN CRISTiíBAL
+P_7;Codigo del barrio o vereda;6098;AREA EXPANSION PAJARITO
+P_7;Codigo del barrio o vereda;6101;ASENTAMIENTO LA AURORA
+P_7;Codigo del barrio o vereda;6102;AURORAS DE LA LIBERTAD
+P_7;Codigo del barrio o vereda;6103;CANTARES
+P_7;Codigo del barrio o vereda;6104;LA CASCADA
+P_7;Codigo del barrio o vereda;6105;LA HUERTA
+P_7;Codigo del barrio o vereda;6107;LA MACARENA
+P_7;Codigo del barrio o vereda;6108;LA MONTA—A
+P_7;Codigo del barrio o vereda;6109;AUC1-LAS FLORES
+P_7;Codigo del barrio o vereda;6111;MIRADOR DEL VALLE
+P_7;Codigo del barrio o vereda;6112;PEDREGAL BAJO
+P_7;Codigo del barrio o vereda;6113;AUC1-PUERTA DEL SOL
+P_7;Codigo del barrio o vereda;6114;RENACERES
+P_7;Codigo del barrio o vereda;6115;VILLA SURAMERICANA
+P_7;Codigo del barrio o vereda;6116;ASENTAMIENTO LA AURORA
+P_7;Codigo del barrio o vereda;7001;BUGA PATIO BONITO
+P_7;Codigo del barrio o vereda;7002;AGUAS FRiçAS
+P_7;Codigo del barrio o vereda;7003;EL CORAZ”N EL MORRO
+P_7;Codigo del barrio o vereda;7004;SAN PABLO
+P_7;Codigo del barrio o vereda;7005;ALTAVISTA SECTOR CENTRAL
+P_7;Codigo del barrio o vereda;7006;LA ESPERANZA
+P_7;Codigo del barrio o vereda;7007;SAN JOSE DEL MANZANILLO
+P_7;Codigo del barrio o vereda;7008;EL JARDiçN
+P_7;Codigo del barrio o vereda;8000;CABECERA DE SAN ANTONIO DE PRADO
+P_7;Codigo del barrio o vereda;8001;LA FLORIDA
+P_7;Codigo del barrio o vereda;8002;POTRERITO
+P_7;Codigo del barrio o vereda;8003;MONTA—ITA
+P_7;Codigo del barrio o vereda;8004;YARUMALITO
+P_7;Codigo del barrio o vereda;8005;EL ASTILLERO
+P_7;Codigo del barrio o vereda;8006;EL SALADO
+P_7;Codigo del barrio o vereda;8007;LA VERDE
+P_7;Codigo del barrio o vereda;8008;SAN JOSE
+P_7;Codigo del barrio o vereda;8098;AREA EXPANSION SAN ANTONIO DE PRADO
+P_7;Codigo del barrio o vereda;9000;CABECERA SANTA ELENA
+P_7;Codigo del barrio o vereda;9001;LAS PALMAS
+P_7;Codigo del barrio o vereda;9002;MEDIA LUNA
+P_7;Codigo del barrio o vereda;9003;PIEDRAS BLANCAS - MATASANO
+P_7;Codigo del barrio o vereda;9004;BARRO BLANCO
+P_7;Codigo del barrio o vereda;9005;EL PLACER
+P_7;Codigo del barrio o vereda;9006;SANTA ELENA SECTOR CENTRAL
+P_7;Codigo del barrio o vereda;9007;EL CERRO
+P_7;Codigo del barrio o vereda;9008;EL LLANO SE
+P_7;Codigo del barrio o vereda;9009;EL PLAN
+P_7;Codigo del barrio o vereda;9010;PIEDRA GORDA
+P_7;Codigo del barrio o vereda;9011;MAZO
+P_10;Estrato de la Vivienda;NULL;NULL
+P_15;Sexo;1;Hombre
+P_15;Sexo;2;Mujer
+P_18;aÒos cumplidos;0;0 A—OS
+P_18;aÒos cumplidos;1;1 A—O
+P_18;aÒos cumplidos;2;2 A—OS
+P_18;aÒos cumplidos;3;3 A—OS
+P_18;aÒos cumplidos;4;4 A—OS
+P_18;aÒos cumplidos;5;5 A—OS
+P_18;aÒos cumplidos;6;6 A—OS
+P_18;aÒos cumplidos;7;7 A—OS
+P_18;aÒos cumplidos;8;8 A—OS
+P_18;aÒos cumplidos;9;9 A—OS
+P_18;aÒos cumplidos;10;10 A—OS
+P_18;aÒos cumplidos;11;11 A—OS
+P_18;aÒos cumplidos;12;12 A—OS
+P_18;aÒos cumplidos;13;13 A—OS
+P_18;aÒos cumplidos;14;14 A—OS
+P_18;aÒos cumplidos;15;15 A—OS
+P_18;aÒos cumplidos;16;16 A—OS
+P_18;aÒos cumplidos;17;17 A—OS
+P_18;aÒos cumplidos;18;18 A—OS
+P_18;aÒos cumplidos;19;19 A—OS
+P_18;aÒos cumplidos;20;20 A—OS
+P_18;aÒos cumplidos;21;21 A—OS
+P_18;aÒos cumplidos;22;22 A—OS
+P_18;aÒos cumplidos;23;23 A—OS
+P_18;aÒos cumplidos;24;24 A—OS
+P_18;aÒos cumplidos;25;25 A—OS
+P_18;aÒos cumplidos;26;26 A—OS
+P_18;aÒos cumplidos;27;27 A—OS
+P_18;aÒos cumplidos;28;28 A—OS
+P_18;aÒos cumplidos;29;29 A—OS
+P_18;aÒos cumplidos;30;30 A 34 A—OS
+P_18;aÒos cumplidos;31;35 A 39 A—OS
+P_18;aÒos cumplidos;32;40 A 44 A—OS
+P_18;aÒos cumplidos;33;45 A 49 A—OS
+P_18;aÒos cumplidos;34;50 A 54 A—OS
+P_18;aÒos cumplidos;35;55 A 59 A—OS
+P_18;aÒos cumplidos;36;60 A 64 A—OS
+P_18;aÒos cumplidos;37;65 A 69 A—OS
+P_18;aÒos cumplidos;38;70 A 74 A—OS
+P_18;aÒos cumplidos;39;75 A 79 A—OS
+P_18;aÒos cumplidos;40;80 Y MAS A—OS
+P_36;¬øActualmente estudia? (asiste a salacuna, guarderia, preescolar, escuela, colegio, tecnico, tecnologico o universidad);1;Si
+P_36;¬øActualmente estudia? (asiste a salacuna, guarderia, preescolar, escuela, colegio, tecnico, tecnologico o universidad);2;No
+P_37;Estudio durante este aÒo?;-88;No aplica
+P_37;Estudio durante este aÒo?;1;Si
+P_37;Estudio durante este aÒo?;2;No
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;-99;No responde
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;-88;No aplica
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;1;Considera que no esti° en edad escolar
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;2;Considera que ya termino sus estudios
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;3;Los costos educativos elevados o Falta dinero
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;4;Debe encargarse de los oficios del hogar (cuidado de los nii±os, ancianos,personas con discapacidad, etc.)
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;5;Falta de tiempo
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;6;Por embrazo
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;7;Por inseguridad en el establecimiento educativo, en el entorno del establecimiento o en el lugar de residencia
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;8;Falta de cupos
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;9;No existe centro educativo cercano. El establecimiento asignado esti° muy lejano
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;10;Necesita trabajar
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;11;No le gusta o no le interesa el estudio
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;12;Por enfermedad o incapacidad fi≠sica
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;13;Necesita educacion especial
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;14;Recibe malos tratos en el colegio
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;15;Porque se caso o formo pareja
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;16;Tuvieron que abandonar el lugar de rsidencia habitual
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;17;Bajo rendimiento academico o indisciplina
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;18;No pudo conseguir los documentos que exigian
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;19;Razones familiares
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;20;Prestar servicio militar, ejercito o policia
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;21;Falta de comprension de su identidad etnica (cultura, idioma o lengua)
+P_38;¬øCual es la causa principal por la que se salio de estudiar este aÒo?;22;Ingreso a un programa de rehabilitacion por consumo de sustancias psicoactivas
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;-99;No responde
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;-98;No sabe
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;-88;No aplica
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;-77;Otro.
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;1;Caminando
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;2;Bicicleta
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;3;Moto
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;4;Bus/Buseta/Ejecutivo
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;5;Transporte Informal
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;6;Taxi/Colectivo
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;7;Transporte Privado
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;8;Metro/Cable
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;9;Sistema integrado de transporte (SIT).
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;10;Caballo (bestia)
+P_43;¬øQuien medio de transporte utiliza predominantemente para dirigirse a su centro educativo?;11;Lancha, Canoa, Bote
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;-99;No responde
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;-98;No sabe
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;-88;No aplica
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;1;De 0 a 20 minutos
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;2;De 21 a 40 minutos
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;3;De 41 a 60 minutos
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;4;De 61 a 80 minutos
+P_44;¬øCuanto tiempo tarda en llegar a su centro educativo?;5;Mi°s de 81 minutos
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);-99;No responde
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);-98;No sabe
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);0;Ninguno
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);1;Salacuna, Guarderia, Preescolar
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);2;Primaria
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);3;Secundaria
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);4;Media academica o Normalista
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);5;Media Tecnica
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);6;Tecnologico
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);7;Universidad
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);8;Especializacion
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);9;Maestria
+P_45;ultimo nivel de estudio aprobado (Ti≠tulo);10;Doctorado
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;-99;No responde
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;-98;No sabe
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;-88;No aplica
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;1;Agronomia, Veterinaria y afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;2;Bellas Artes
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;3;Ciencias de la Educacion
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;4;Ciencias de la Salud
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;5;Ciencias Sociales, Derecho, Ciencias Poli≠ticas
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;6;Economia, Administracion, Contaduria y afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;7;Humanidades y Ciencias Religiosas
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;8;Ingenieria de Sistemas, Telecomunicaciones o afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;9;Ingenieria Industrial o afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;10;Ingenieria Electronica, Electrica o afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;11;Ingenieria Meci°nica o afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;12;Ingenieria Ambiental o afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;13;Ingenieria Qui≠mica o afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;14;Ingenieria Civil , Arquitectura, Urbanismo y afines
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;15;Matematicas y Ciencias Naturales
+P_48;iÅrea del conocimiento en la que obtuvo el ti≠tulo;16;Otras
+P_49;El cari°cter del ESTABLECIMIENTO EDUCATIVO (escuela, colegio, universidad u otra institucion) en donde estudia o estudio el ultimo curso o grado, es:;-99;No responde
+P_49;El cari°cter del ESTABLECIMIENTO EDUCATIVO (escuela, colegio, universidad u otra institucion) en donde estudia o estudio el ultimo curso o grado, es:;-98;No sabe
+P_49;El cari°cter del ESTABLECIMIENTO EDUCATIVO (escuela, colegio, universidad u otra institucion) en donde estudia o estudio el ultimo curso o grado, es:;-88;No aplica
+P_49;El cari°cter del ESTABLECIMIENTO EDUCATIVO (escuela, colegio, universidad u otra institucion) en donde estudia o estudio el ultimo curso o grado, es:;1;Pi∫blico
+P_49;El cari°cter del ESTABLECIMIENTO EDUCATIVO (escuela, colegio, universidad u otra institucion) en donde estudia o estudio el ultimo curso o grado, es:;2;Privado
+P_205;¬øCuantos de los siguientes servicios o bienes, en funcionamiento, posee este hogar? Computador de escritorio o portatil para uso del HOGAR;NULL;NULL
+P_262;La educacion brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:;-99;No responde
+P_262;La educacion brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:;-98;No sabe
+P_262;La educacion brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:;1;Mejorado
+P_262;La educacion brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:;2;Igual
+P_262;La educacion brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:;3;Empeorado
+P_264;¬øCree Usted que en los ultimos 12 meses, en su municipio, la situacion de: la educacion;-99;No responde
+P_264;¬øCree Usted que en los ultimos 12 meses, en su municipio, la situacion de: la educacion;-98;No sabe
+P_264;¬øCree Usted que en los ultimos 12 meses, en su municipio, la situacion de: la educacion;1;Mejorado
+P_264;¬øCree Usted que en los ultimos 12 meses, en su municipio, la situacion de: la educacion;2;Igual
+P_264;¬øCree Usted que en los ultimos 12 meses, en su municipio, la situacion de: la educacion;3;Empeorado

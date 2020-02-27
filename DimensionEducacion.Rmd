@@ -1,0 +1,185 @@
+---
+title: "ANALISIS Y AGRUPACION DE LOS BARRIOS DE MEDELLIN A TRAVES DE LA EDUCACION"
+author: "Sebastian Olarte"
+date: "24/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(rmarkdown)
+library(markdown)
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+library(data.table)
+library(cluster)
+library(factoextra)
+```
+
+## ANALISIS Y CARACTERIZACION DE LA EDUCACION EN LOS BARRIOS DE LA CIUDAD DE MEDELLIN
+
+En esta seccion se pretende hacer una clasificación de los barrios de la ciudad de medellin teniendo en cuenta los datos plasmados en la encuesta de calidad de vida sobre educacion. Esta es una de las tantas dimensiones que se pretende estudiar dentro de la encuesta de calidad de vida que se hace periodicamente en la ciudad. 
+
+Las variables a analizar en este analisis dimensionales se desprenden de la siguiente lista de preguntas plasmadas en la encuesta:
+
+**1. Barrio o vereda:* Este es el principal valor, ya que se pretende hacer un analisis por en los diferentes barrios.
+**2. Estrato de la Vivienda:* Esta es una variable siempre fundamental a la hora de hacer un estudio de la poblacion, servirá para definir por estrato los niveles de educacion de las personas encuestadas.
+**3. Sexo de la persona:* Que nos va a permitir diferenciar entre hombres y mujeres como actores principales dentro de la educacion.
+**4. Años cumplidos:* Lo que nos permite hacer una caracterizacion de las personas por su edad.
+**5. Sabe leer y escribir más de un párrafo?:* Lo cual nos permitirá conocer si las personas de dichos barrios son o no personas analfabetas.
+**6. ¿Actualmente estudia?:* Esta variable nos permitirá agrupar basados en si las personas residentes de dichos barrios son personas que estudian o no.
+**7. Último nivel de estudio aprobado (Título):* Esto nos permitirá conocer cuales son los barrios que tienen personas con titulos más altos y quienes tienen pocos titulos.
+**8. ¿Grado o año en curso que estaba estudiando cuando se retiró, que está estudiando actualmente o que estudió?:* Esta variable nos permite saber si en loc diferentes barrios las personas se encuentran estudiando, se salieron de estudiar o termianron ya sus estudios.
+**9. Área del conocimiento en la que obtuvo el título:* Lo que nos permitirá saber si algunas personas de barrios particulares se dedican a areas del conocimiento comunes, como por ejemplo, la medicina, la ingenieria, o los idiomas.
+**10. El carácter del establecimiento educativo (escuela, colegio, universidad u otra institución) en donde estudia o estudió el último curso o grado:* Lo cual nos permitirá distinguir a los barrios con personas que tienen acceso a la educacion privada y aquellos que acceden a la educacion publica.
+**La educación brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:* Esta variable que mide la percepcion de las personas sobre la educacion en su barrio, nos permitirá hacer una diferenciacion entre los barrios que segun sus habitantes han mejorado en educacion y los que no, o incluso los qe han empeorado.
+
+
+## Desarrollo del Analisis:
+
+Lo primero que se hace entonces es cargar la base de datos, y seleccionar el rango de los datos que vamos a trabajar que para este analisis corresponde a los datos del 2018 y a las variables ya mencionadas. 
+```{r  }
+#Leer la base de datos y corregir los valores extraños por NAs
+encuesta <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-98,-99))
+
+#Tomar los datos del 2018
+educacion <- encuesta %>% filter(encuesta_calidad.año == 2018) %>%
+                              select(encuesta_calidad.barrio,#Nombre de Barrio
+                                     encuesta_calidad.estrato,#Estrato
+                                     encuesta_calidad.p_15,#Sexo
+                                     encuesta_calidad.p_18,#Años cumplidos
+                                     encuesta_calidad.p_35,#sabe leer o escribir
+                                     encuesta_calidad.p_36,#estudia actualmente?
+                                     encuesta_calidad.p_45,#Ultimo nivel de estudio
+                                     encuesta_calidad.p_46,#Año que está cursando
+                                     encuesta_calidad.p_48,#Area en que obtuvo el titulo
+                                     encuesta_calidad.p_49,#Caracter establecimiento
+                                     encuesta_calidad.p_262#Percepcion educacion barrio
+                                     )
+#Para liberar la memoria del PC
+encuesta = NULL
+
+#Se cambian los nombres de las variables
+names(educacion) = c("barrio","estrato","sexo","edad","lee_escribe",
+                     "estudia","ult_nivel_estudio","año_que_cursa","area_conocimiento",
+                     "tipo_institucion", "percep_educacion")
+
+```
+
+Ahora ya se tiene un data frame con los datos de interes, pero este contiene demasiados datos pues tiene exactamente 30.934 observaciones ademas, no se encuentran organizados de tal forma que que permita hacer el analisis que se quiere hacer. Se procederá a organizarlo de tal manera que se tenga un solo registro por cada uno de los barrios registrado en el dataframe. Para ello se hace el siguiente procedimiento que consiste en agrupar por cada barrio una tabla de frecuencias de las demas variables.
+```{r}
+#Barrido de los barrios por estrato
+estrato <-table(educacion[,c("barrio","estrato")])
+estrato <- round(prop.table(estrato),5)
+
+#Barrido de los barrios por sexo
+sexo <-table(educacion[,c("barrio","sexo")])
+sexo <- round(prop.table(sexo),5)
+
+#Barrido de los barrios por edad
+edad <-table(educacion[,c("barrio","edad")])
+edad <- round(prop.table(edad),5)
+
+#Barrido de los barrios por lee_escribe
+lee_escribe <-table(educacion[,c("barrio","lee_escribe")])
+lee_escribe <- round(prop.table(lee_escribe),5)
+
+#Barrido de los barrios por si estudia
+estudia <-table(educacion[,c("barrio","estudia")])
+estudia <- round(prop.table(estudia),5)
+
+#Barrido de los barrios por si ultimo nivel de estudio
+ult_nivel_estudio <-table(educacion[,c("barrio","ult_nivel_estudio")])
+ult_nivel_estudio <- round(prop.table(ult_nivel_estudio),5)
+
+#Barrido de los barrios por el año que cursa
+año_que_cursa <-table(educacion[,c("barrio","año_que_cursa")])
+año_que_cursa <- round(prop.table(año_que_cursa),5)
+
+#Barrido de los barrios por area del conocimiento del ultimo titulo obtenido
+area_conocimiento <-table(educacion[,c("barrio","area_conocimiento")])
+area_conocimiento <- round(prop.table(area_conocimiento),5)
+
+#Barrido de los barrios por el tipo de institucion publica o privada
+tipo_institucion <-table(educacion[,c("barrio","tipo_institucion")])
+tipo_institucion <- round(prop.table(tipo_institucion),5)
+
+#Barrido de los barrios por la percepcion de la educacion en el barrios
+percep_educacion <-table(educacion[,c("barrio","percep_educacion")])
+percep_educacion <- round(prop.table(percep_educacion),5)
+
+```
+
+Lo siguiente es tomar todas estas nuevas variables generadas y unirlas para crear asi una matriz de datos que será posteriormente la generatriz de el datframe final con el que se trabajará que se llamará **df_educacion.**
+
+```{r}
+educacion <- NULL
+mat_educacion <- cbind(estrato, sexo, lee_escribe, estudia, ult_nivel_estudio,
+                       año_que_cursa, area_conocimiento, tipo_institucion, percep_educacion)
+df_educacion <- as.data.frame(mat_educacion)
+row.names.data.frame(df_educacion)
+```
+
+Ahora que ya se tiene el dataframe listo para operar con él se empezarán a agrupar los diferentes barrios usando diferentes algoritmos de clustering. Los algoritmos aqui usados se pueden encontrar en la pagina web de Rpubs del señor Kevin Hidalgo siguiendo el siguiente link: https://rpubs.com/kfhidalgoh/300948 
+
+###Clusters usando K-Means
+Lo primero que hay que hacer para este algoritmo es escalar los datos y elegir el mejor valor de K cluster que permita hacer una mejor segmentacion.
+```{r}
+#Se crea una version escalada del dataframe
+df_educacion_scale <- scale(df_educacion)
+
+#Determinación óptima del número de cluster segun varios criterios
+par(mfrow = c(1, 3))
+fviz_nbclust(df_educacion_scale, kmeans, method = "gap_stat")
+fviz_nbclust(df_educacion_scale, kmeans, method = "wss")
+fviz_nbclust(df_educacion_scale, kmeans, method = "silhouette")
+```
+Vemos como el mejor valor para K es K = 3 Cluster.
+Ahora se procede a hacer la clusterizacion.
+```{r}
+#Ejecuta el cluster
+clust_kmeans <- kmeans(df_educacion_scale, 3, nstart = 25)
+#Grafica el cluster
+fviz_cluster(clust_kmeans, data = df_educacion_scale, frame.type = "convex")
+#Numero de barrios por cada cluster
+table(clust_kmeans$cluster)        
+```
+Haciendo un analisis de como quedaron distribuidos los barrios en los diferentes clusters vemos que el grupo tres el cual corresponde a barrios de estratos bajos y marginales, como por ejemplo La Sierra, La Cruz, Guayaquil, El Picacho, y otros, en el grupo 1 y con menos barrios se agrupan los barrios más centrales y que pueden albergar gran cantidad de personas de altos estudios ya que con barrios altamente comerciales, de lugares de trabajo, y de estratos más altos, como lo son San Diego, Patio Bonito, Los Colores, Los Balsos, El Tesoro o Laureles. En el segundo grupo se encuentran barrios que se solapan por un lado con los del grupo 1 y por otro con los del grupo 3 esto se debe a que K-Means es un algotimo sensible al ruido.
+
+###Clusters usando PAM
+con este algoritmo la particion se hace ya no usando los centorides sino usando los medoids que son los datos mas representativos de cada cluster. Este algoritmo es más robusto y menos sensible al ruido producido por los valores atipicos.
+```{r}
+
+clust_pam <- pam(df_educacion_scale, 3)
+# Visualize
+fviz_cluster(clust_pam)
+table(clust_pam$cluster)
+
+```
+Se ve que este cluster es muy similar al anterior pero si se ve como es un poco mas preciso.
+
+
+###Clusters usando Clarax
+Clarax es un algoritmo de clusterizacion para grandes cantidades de datos. Por tanto es un algoritmo más desarrollado con mejores resultados, para este ejercicio se puede ver como mejora la precision de los grupos de cluster en cuanto a la cantidad que tienen.
+```{r}
+clarax <- clara(df_educacion_scale, 3)
+# Cluster plot
+fviz_cluster(clarax, stand = T, geom = "point",
+             pointsize = 1)
+table(clarax$clustering)
+```
+
+###Clusters usando Agrupamiento Jerarquico:
+Por ultimo se hará una clusterizacion usando el dendrograma que es tipico de un agrupamiento jerarquico. Se tomaran 4 grupos para este agrupamiento inicialmente.
+```{r}
+clust_jerar <- hcut(df_educacion, k = 3, stand = TRUE)
+fviz_dend(clust_jerar, rect = TRUE, cex = 0.5,
+          k_colors = c("#FF0000","#00FF00", "#0000FF","#FF00FF"))
+```
+
+
+Se puede apreciar como efectivamente la clusterzacion usando 3 diferentes grupos es la mejor forma de agrupar estos barrios por sus diferentes necesidades y situaciones de educacion.
+
+
+

@@ -1,0 +1,272 @@
+---
+title: "trabajo 1 TAE"
+author: "Juliana Zuluaga Serna"
+date: "26/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Salud
+
+Es un estado de bienestar o de equilibrio que puede ser visto a nivel subjetivo (un ser humano asume como aceptable el estado general en el que se encuentra) o a nivel objetivo (se constata la ausencia de enfermedades o de factores dañinos en el sujeto en cuestión)
+Tomado de [https://es.wikipedia.org/wiki/Salud]
+
+Referente a esto, se tomó una base de [datos abiertos del portal MEdata](http://medata.gov.co/) sobre la [Encuesta Calidad de Vida](http://medata.gov.co/dataset/encuesta-calidad-de-vida) en base a las 342 preguntas que se le realizarón a los habitantes desde año 2011 hasta el año 2018, en base a esto se realizará el estudio demográfico en base a el último año de encuesta.
+
+Se realizó un analisis de las variables que se relacionaban con la dimensión de Salud en todos sus aspectos, mental, física, social, sexual, ambiental, publica, económica, familiar y laboral. Al ser mas de 60 variables se decide estudiar solo algunas, La razón para elegirlas es debido a que estas fueron las preguntas que pueden ser más generales para abordar la dimensión de Salud física, sexual, publica y ambiental de la persona, sin abordar la salud mental, social, económica, familiar y laboral.
+
+### Librerías
+```{r, warning = FALSE, message = FALSE}
+require(data.table)
+require(ggplot2)
+require(tidyverse)
+library(htmlwidgets)
+library(maptools)
+library(udunits2)
+library(rgdal)
+library(leaflet)
+library(stringr)
+```
+
+```{r, message = FALSE, warning = FALSE}
+ECvida <- fread(choose.files(), 
+                encoding = "UTF-8", na = c("NULL",-88,-99,-98, -77),
+                select = c("encuesta_calidad.ano","encuesta_calidad.barrio",
+                           "encuesta_calidad.p_57", "encuesta_calidad.p_66",
+                           "encuesta_calidad.p_295","encuesta_calidad.p_307",
+                           "encuesta_calidad.p_308",
+                           "encuesta_calidad.p_312","encuesta_calidad.p_313",
+                           "encuesta_calidad.p_314",
+                           "encuesta_calidad.p_332",
+                           "encuesta_calidad.p_338",,
+                          "encuesta_calidad.p_341","encuesta_calidad.p_342"))
+
+
+#Corregir nombres de los barrios
+
+str_replace(ECvida$encuesta_calidad.barrio, "ANDALUCIA", "ANDALUCÍA") %>%
+str_replace("Nº 2", "NO.2") %>% 
+  str_replace("Nº 1", "NO.1") %>% 
+  str_replace("Nº 3", "NO.3") %>%
+  str_replace("AREA EXPANSION", "ÁREA DE EXPANSIÓN") %>%
+  str_replace("EXPANCION", "EXPANSIÓN") %>% 
+  str_replace("AREA", "ÁREA") %>% 
+  str_replace("BOMBONA", "BOMBONÁ") %>% 
+  str_replace("LA ASOMADERA", "ASOMADERA") %>%
+  str_replace("BELALCAZAR", "BELALCÁZAR") %>% 
+  str_replace("CALAZANS", "CALASANZ") %>% 
+  str_replace("COLON", "COLÓN") %>% 
+  str_replace("MIRA FLORES", "MIRAFLORES") %>% 
+  str_replace("BARRIO FACULTAD DE MINAS", "FACULTAD DE MINAS") %>% 
+  str_replace("CABECERA SAN ANT DE PR.", "SAN ANTONIO DE PRADO") %>% 
+  str_replace("CARLOS E RESTREPO", "CARLOS E. RESTREPO") %>% 
+  str_replace("URQUITA", "URQUITÁ") %>% 
+  str_replace("LOS CERROS EL VERJEL", "LOS CERROS EL VERGEL") %>% 
+  str_replace("CAYCEDO", "CAICEDO") %>% 
+  str_replace("VALDES", "VALDÉS") %>% 
+  str_replace("CERRO EL VOLADOR", "B. CERRO EL VOLADOR") %>% 
+  str_replace("MOSCU", "MOSCÚ") %>% 
+  str_replace("JOSELA", "JOSÉ LA") %>%
+  str_replace("JOSE", "JOSÉ") %>% 
+  str_replace("EL YOLOMBO", "YOLOMBO") %>% 
+  str_replace("PIEDRAS BLANCAS", "PIEDRAS BLANCAS - MATASANO") %>% 
+  str_replace("BASILIA", "BRASILIA") %>% 
+  str_replace("VILLA TINA", "VILLATINA") %>% 
+  str_replace("LILIAM", "LILLIAM") %>% 
+  str_replace("BOLIVAR", "BOLÍVAR") %>% 
+  str_replace("CORREGIMIENTO PALMITAS", "PALMITAS SECTOR CENTRAL") %>% 
+  str_replace("INES", "INÉS") %>% 
+  str_replace("FE", "FÉ") %>% 
+  str_replace("LUCIA", "LUCÍA") %>% 
+  str_replace("SABIO", "SAVIO") %>% 
+  str_replace("BERMEJAL- LOS ÁLAMOS", "BERMEJAL-LOS ÁLAMOS") %>% 
+  str_replace("BOLÍVARIANA", "BOLIVARIANA") %>% 
+  str_replace("EL NOGAL - LOS ALMENDROS", "EL NOGAL-LOS ALMENDROS") %>% 
+  str_replace("JUAN XXIII - LA QUIEBRA", "JUAN XXIII LA QUIEBRA") %>% 
+  str_replace("PROGRESO  Nº 2", "EL PROGRESO") %>% 
+  str_replace("MARIA", "MARÍA") %>% 
+  str_replace("PLAYÓN", "PLAYON") %>% 
+  str_replace("EL SOCORRO / LA GABRIELA", "EL SOCORRO") %>% 
+  str_replace("FÉRRINI", "FERRINI") %>% 
+  str_replace("LA CANDE LARIA", "LA CANDELARIA") %>%
+  str_replace("EL PLAYON", "PLAYÓN") %>%
+  str_replace("IGUANA", "IGUANÁ") %>%
+  str_replace("MARÍA CANO - CARAMBOLAS", "MARÍA CANO-CARAMBOLAS") %>%
+  str_replace("DE ABURRA", "DEL ABURRÁ") %>%
+  str_replace("ALTAVISTA CENTRAL", "ALTAVISTA SECTOR CENTRAL") %>%
+  str_replace("SECTOR CENTRAL", "CENTRO ADMINISTRATIVO") %>%
+  str_replace("ALTAVISTA CENTRO ADMINISTRATIVO", "ALTAVISTA SECTOR CENTRAL") %>%
+  str_replace("SANTA ELENA CENTRO ADMINISTRATIVO", "SANTA ELENA SECTOR CENTRAL") %>%
+  str_replace("PALMITAS CENTRO ADMINISTRATIVO", "PALMITAS SECTOR CENTRAL") %>%  
+  str_replace("PROGRESO", "EL PROGRESO")
+
+names(ECvida) <- c("año", "barrio", "p_57", "p_66", "p_295", "p_307", "p_308", 
+                   "p_312","p_313","p_314","p_332","p_338","p_341","p_342")
+
+```
+
+**Filtrando Base por el año 2018**
+
+```{r}
+ECvida <- ECvida[año == 2018,]
+```
+**Conteo de valores "NULL" en la base de datos de 2018**
+
+```{r}
+colSums(is.na(ECvida))
+dim(ECvida)
+```
+
+Resumen de las variables
+
+```{r}
+summary(ECvida[,c(-1,-2)])
+```
+
+Como las respuestas negativas son de No sabe (-98) y no responde (-99) y no aplica (-88) se aglomeran como NA's ya que estas observaciones no representan información de interés, aparte de eso, estos valores representan en gran medida la base de datos y al realizar los análisis tendrían un gran conflicto en los resultados, es por ello que estas otras covariables se beran hacer en un análisis aparte.
+
+**Categorizando por barrio**
+
+```{r}
+#Sindrome de Down promedio por barrio
+Sindrome <- table(ECvida[,c("barrio", "p_57")])
+Sindrome <- prop.table(Sindrome)
+colnames(Sindrome) <-  c("Si", "No")
+
+#Tipo de afiliación al sistema de seguridad social en salud promedio que componen el hogar
+Afiliacion <- table(ECvida[,c("barrio", "p_66")])
+Afiliacion <- prop.table(Afiliacion)
+colnames(Afiliacion) <-  c("Es contributivo cotizante. Tiene EPS.",
+                           "Beneficiario del régimen contributivo.",
+                           "Subsidiado, tiene EPS - Subsidiada",
+                           "Régimen especial: (FFAA, ECOPETROL y magisterio)",
+                           "Beneficiario del Régimen especial",
+                           "No está afiliado y está identificado en el SISBEN",
+                           "No está afiliado y no está identificado en el SISBEN")
+
+#Sin alimentos por falta de dinero promedio por barrio
+Alimentos <- table(ECvida[,c("barrio", "p_295")])
+Alimentos <- prop.table(Alimentos)
+colnames(Alimentos) <-  c("No", "Si")
+
+#información acerca de los métodos de planificación familiar promedio por barrio
+planifica <- table(ECvida[,c("barrio", "p_307")])
+planifica <- prop.table(planifica)
+colnames(planifica) <-  c("Si", "No")
+
+#Planificación promedio por barrio
+planifica1 <- table(ECvida[,c("barrio", "p_308")])
+planifica1 <- prop.table(planifica1)
+colnames(planifica1) <-  c("Si", "No")
+
+#El estado de la contaminación del aire promedio por barrio
+aire <- table(ECvida[,c("barrio", "p_312")])
+aire <- prop.table(aire)
+colnames(aire) <-  c("Muy mala", "Mala","Aceptable","Buena","Muy Buena")
+
+#El estado de la contaminación de los ríos y las quebradas promedio por barrio
+rios <- table(ECvida[,c("barrio", "p_313")])
+rios <- prop.table(rios)
+colnames(rios) <-  c("Muy mala", "Mala","Aceptable","Buena","Muy Buena")
+
+#El nivel del ruido promedio por barrio
+ruido <- table(ECvida[,c("barrio", "p_314")])
+ruido <- prop.table(ruido)
+colnames(ruido) <-  c("Muy mala", "Mala","Aceptable","Buena","Muy Buena")
+
+
+#Cómo lo califica los servicios de médico general promedio por barrio
+medgen <- table(ECvida[,c("barrio", "p_332")])
+medgen <- prop.table(medgen)
+colnames(medgen) <-  c("Mala", "Regular","Buena","Excelente")
+
+
+#Cómo lo califica los servicios de urgencias promedio por barrio
+urgencias <- table(ECvida[,c("barrio", "p_338")])
+urgencias <- prop.table(urgencias)
+colnames(urgencias) <-  c("Mala", "Regular","Buena","Excelente")
+
+#Cómo lo califica los servicios de hospitalización promedio por barrio
+hospital <- table(ECvida[,c("barrio", "p_341")])
+hospital <- prop.table(hospital)
+colnames(hospital) <-  c("Mala", "Regular","Buena","Excelente")
+
+#En general estado de salud, promedio por barrio
+salud <- table(ECvida[,c("barrio", "p_342")])
+salud <- prop.table(salud)
+colnames(salud) <-  c("Malo", "Regular","Bueno","Excelente")
+
+
+```
+
+Estructuración de la base de datos
+
+```{r}
+
+ECvida2 <- cbind(Sindrome, Afiliacion, Alimentos, planifica, planifica1,
+                   aire, rios, ruido, medgen, urgencias,hospital, salud)
+
+```
+
+**Matriz normalizada**
+  
+
+```{r}
+ECvida3 <- scale(ECvida2, center = TRUE, scale = TRUE)
+```
+
+Haciendo los cluster
+
+```{r}
+library(ClustOfVar)
+Dendograma <- hclustvar(ECvida[,c(-1,-2)])
+plot(Dendograma)
+rect.hclust(Dendograma, k = 2, border = 2:10)
+```
+
+Como se observa en la unión de los dos grupos, el primer grupo se podría especificar como salud publica y ambiental puesto que estas preguntas eran sobre la contaminación alrededor de la vereda donde viven que se clasificaban en "Muy mala", "Mala","Aceptable","Buena","Muy Buena" El segundo grupo tiende a ser similar puesto que la mayoría de estas preguntas son respuestas de "Si" y "No" abordando la parte fisica y sexual de las personas.
+
+
+```{r, message = F}
+library(factoextra)
+au <- prcomp(ECvida3)
+fviz_eig(au)
+fviz_nbclust(x = ECvida3, FUNcluster = kmeans, method = "silhouette" )
+```
+
+
+El número optimo de grupos serían dos.
+
+
+```{r}
+
+barrios <- as.factor(ECvida$barrio)
+barrios2 <- levels(barrios)
+barrios2 <- as.factor(barrios2)
+
+#Mapa simple
+m <- leaflet(barrios)
+m <- addTiles(m)
+m
+```
+
+```{r}
+#Superoponemos los barrios
+m <- addPolygons(m, popup = barrios2)
+m <- addTiles(m)
+```
+
+```{r}
+#Color a los barrios
+colores <- sample(x = c("orange", "green", "yellow"), size = length(nombres_barrios), replace = TRUE)
+m <- addPolygons(m, popup = Dendograma, color = colores)
+m
+```
+
+```{r}
+
+```
+

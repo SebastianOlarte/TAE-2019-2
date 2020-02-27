@@ -1,0 +1,263 @@
+---
+title: "TAE"
+author: 'laura riveros quintero, CC: 1013654471'
+date: "11/2/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+La demograf??a es un estudio, donde el interés principal es obtener información del comportamiento de las población, de cómo evolucionan y estructuran en base a análisis estad??stico.
+
+Referente a esto, se tomó una base de [datos abiertos del portal MEdata](http://medata.gov.co/) sobre la [Encuesta Calidad de Vida](http://medata.gov.co/dataset/encuesta-calidad-de-vida) en base a las 342 preguntas que se le realizarón a los habitantes desde año 2011 hasta el año 2018, en base a esto se realizará el estudio demográfico en base a el último año de encuesta.
+
+Se pretende estudiar el comportamiento de la población frente algunas dimensiones que consideramos importantes para poder realizar una agrupacion de los barrios de medellin. Las dimensiones que se analizaran en este caso corresponden a educacion, percepcion ciudadana, salud, socio economico y calidad de vivienda, cada una de ellas posee caracterizticas fundamentales para poder realizar una buena agrupacion.
+
+### Librer??as
+```{r, warning = FALSE, message = FALSE}
+require(data.table)
+require(ggplot2)
+require(tidyverse)
+library(htmlwidgets)
+library(maptools)
+library(udunits2)
+library(rgdal)
+library(leaflet)
+```
+
+```{r, message = FALSE, warning = FALSE}
+ECvida <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-99,-98, -77),select = c("encuesta_calidad.año", "encuesta_calidad.barrio", "encuesta_calidad.p_146", "encuesta_calidad.p_147", "encuesta_calidad.p_149", "encuesta_calidad.p_158", "encuesta_calidad.p_162", "encuesta_calidad.p_165", "encuesta_calidad.p_171", "encuesta_calidad.p_178","encuesta_calidad.p_182", "encuesta_calidad.p_183", "encuesta_calidad.p_184"))
+
+#Corregir nombres de los barrios
+
+str_replace(ECvida$encuesta_calidad.barrio, "ANDALUCIA", "ANDALUCÍA") %>%
+str_replace("Nº 2", "NO.2") %>% 
+  str_replace("Nº 1", "NO.1") %>% 
+  str_replace("Nº 3", "NO.3") %>%
+  str_replace("AREA EXPANSION", "ÁREA DE EXPANSIÓN") %>%
+  str_replace("EXPANCION", "EXPANSIÓN") %>% 
+  str_replace("AREA", "ÁREA") %>% 
+  str_replace("BOMBONA", "BOMBONÁ") %>% 
+  str_replace("LA ASOMADERA", "ASOMADERA") %>%
+  str_replace("BELALCAZAR", "BELALCÁZAR") %>% 
+  str_replace("CALAZANS", "CALASANZ") %>% 
+  str_replace("COLON", "COLÓN") %>% 
+  str_replace("MIRA FLORES", "MIRAFLORES") %>% 
+  str_replace("BARRIO FACULTAD DE MINAS", "FACULTAD DE MINAS") %>% 
+  str_replace("CABECERA SAN ANT DE PR.", "SAN ANTONIO DE PRADO") %>% 
+  str_replace("CARLOS E RESTREPO", "CARLOS E. RESTREPO") %>% 
+  str_replace("URQUITA", "URQUITÁ") %>% 
+  str_replace("LOS CERROS EL VERJEL", "LOS CERROS EL VERGEL") %>% 
+  str_replace("CAYCEDO", "CAICEDO") %>% 
+  str_replace("VALDES", "VALDÉS") %>% 
+  str_replace("CERRO EL VOLADOR", "B. CERRO EL VOLADOR") %>% 
+  str_replace("MOSCU", "MOSCÚ") %>% 
+  str_replace("JOSELA", "JOSÉ LA") %>%
+  str_replace("JOSE", "JOSÉ") %>% 
+  str_replace("EL YOLOMBO", "YOLOMBO") %>% 
+  str_replace("PIEDRAS BLANCAS", "PIEDRAS BLANCAS - MATASANO") %>% 
+  str_replace("BASILIA", "BRASILIA") %>% 
+  str_replace("VILLA TINA", "VILLATINA") %>% 
+  str_replace("LILIAM", "LILLIAM") %>% 
+  str_replace("BOLIVAR", "BOLÍVAR") %>% 
+  str_replace("CORREGIMIENTO PALMITAS", "PALMITAS SECTOR CENTRAL") %>% 
+  str_replace("INES", "INÉS") %>% 
+  str_replace("FE", "FÉ") %>% 
+  str_replace("LUCIA", "LUCÍA") %>% 
+  str_replace("SABIO", "SAVIO") %>% 
+  str_replace("BERMEJAL- LOS ÁLAMOS", "BERMEJAL-LOS ÁLAMOS") %>% 
+  str_replace("BOLÍVARIANA", "BOLIVARIANA") %>% 
+  str_replace("EL NOGAL - LOS ALMENDROS", "EL NOGAL-LOS ALMENDROS") %>% 
+  str_replace("JUAN XXIII - LA QUIEBRA", "JUAN XXIII LA QUIEBRA") %>% 
+  str_replace("PROGRESO  Nº 2", "EL PROGRESO") %>% 
+  str_replace("MARIA", "MARÍA") %>% 
+  str_replace("PLAYÓN", "PLAYON") %>% 
+  str_replace("EL SOCORRO / LA GABRIELA", "EL SOCORRO") %>% 
+  str_replace("FÉRRINI", "FERRINI") %>% 
+  str_replace("LA CANDE LARIA", "LA CANDELARIA") %>%
+  str_replace("EL PLAYON", "PLAYÓN") %>%
+  str_replace("IGUANA", "IGUANÁ") %>%
+  str_replace("MARÍA CANO - CARAMBOLAS", "MARÍA CANO-CARAMBOLAS") %>%
+  str_replace("DE ABURRA", "DEL ABURRÁ") %>%
+  str_replace("ALTAVISTA CENTRAL", "ALTAVISTA SECTOR CENTRAL") %>%
+  str_replace("SECTOR CENTRAL", "CENTRO ADMINISTRATIVO") %>%
+  str_replace("ALTAVISTA CENTRO ADMINISTRATIVO", "ALTAVISTA SECTOR CENTRAL") %>%
+  str_replace("SANTA ELENA CENTRO ADMINISTRATIVO", "SANTA ELENA SECTOR CENTRAL") %>%
+  str_replace("PALMITAS CENTRO ADMINISTRATIVO", "PALMITAS SECTOR CENTRAL") %>%  
+  str_replace("PROGRESO", "EL PROGRESO")
+
+
+names(ECvida) <- c("año", "barrio", "p_146", "p_147", "p_149", "p_158", "p_162", "p_165", "p_171", "p_178","p_182","p_183","p_184")
+```
+
+**Filtrando Base por el año 2018**
+
+```{r}
+ECvida <- ECvida[año == 2018,]
+```
+
+
+**Conteo de valores "NULL" en la base de datos de 2018**
+
+```{r}
+colSums(is.na(ECvida))
+dim(ECvida)
+```
+
+Resumen de las variables
+
+```{r}
+summary(ECvida[,c(-1,-2)])
+```
+
+Como las respuestas negativas son de No sabe (-98) y no responde (-99) y no aplica (-88) se aglomeran como NA's ya que estas observaciones no representan información de interés, aparte de eso, estos valores representan en gran medida la base de datos y al realizar los análisis tendr??an un gran conflicto en los resultados, es por ello que estas otras covariables se beran hacer en un análisis aparte.
+
+
+**Categorizando por barrio**
+
+Se realizara la categorizacion por barrio teniendo en cuenta las preguntas que se realizaron frente a la calidad de vivienda, en este caso se tomaron en cuenta once variables correspondientes a las preguntas que se realizaron en la encuesta, estas se consideraron relevantes para poder definir que tipo de vivienda, en que condiciones fue construida y si cuenta o no con los servicios publios basicos.
+
+las preguntas son son:
+p_146: TIPO DE VIVIENDA con las categorias (rancho, cuarto, cuarto inquilino, apto y casa)
+p_147: TIPO DE PARED EXTERIOR ("desecho","burda","bareque.sin","bareque","tapia","drywall","ladrillo","bloque.ran","ladrillo.ran","adobe.rev" y "bloque en piedra")
+p_149: De donde obtiene principalmente esta vivienda el agua para consumo humano
+p_158: La unidad de vivienda cuenta con servicios publicos de Energia (si o no)
+p_162:La unidad de vivienda cuenta con servicios publicos de Acueducto (si o no)
+p_165: La unidad de vivienda cuenta con servicios publicos de Alcantarillado (si o no)
+p_171: La unidad de vivienda cuenta con servicios publicos de Gas Natural (si o no)
+p_178: La unidad de vivienda cuenta con servicios públicos de Conexion a Internet ( si o no)
+p_182: Esta vivienda, en el ultimo año, se ha visto afectada por("ninguno","inundacion","avalancha","deslizamiento","hund.terreno","falla geologica","incendio")
+p_183: como eliminan principalmente la basura en esta unidad de vivienda ("servicio informal","patio de casa","la tiran al ca?o","la entierran","la queman","en basurero publico","la comercializan","la reutilizan","la dan a un reciclador","servicios de aseo")
+p_184: Con que tipo de servicio sanitario cuenta el hogar("no tiene","batajar","letrina","inodoro sin conexion","inodoro con conexion a pozo","inodoro con conexion alcantarillado")
+```{r}
+#tipo de vivienda por barrio
+Tipo.vivien.M<-table(ECvida[,c("barrio","p_146")])
+Tipo.vivien.M <- prop.table(Tipo.vivien.M)
+colnames(Tipo.vivien.M) <-  c("rancho", "cuarto", "cuarto.inq", "apto", "casa")
+
+#tipo de pared de la vivienda segun el barrio
+Tipo.pared.M<-table(ECvida[,c("barrio", "p_147" )])
+Tipo.pared.M<-prop.table(Tipo.pared.M)
+colnames(Tipo.pared.M)<- c("desecho","burda","bareque.sin","bareque","tapia","drywall","ladrillo","bloque.ran","ladrillo.ran","adobe.rev","bloque.piedra")
+
+#segun el barrio, de donde obtiene el agua para consumo
+Agua.consumo<-table(ECvida[,c("barrio","p_149")])
+Agua.consumo<-prop.table(Agua.consumo)
+colnames(Agua.consumo)<-c("publicos","acu.veredal","pila.publica")
+
+#que barrios cuentan con energia publica
+Energia<-table(ECvida[,c("barrio","p_158")])
+Energia<-prop.table(Energia)
+colnames(Energia)<-c("si")
+
+#que barrios cuentan con acueducto
+Acueducto<-table(ECvida[,c("barrio","p_162")])
+Acueducto<-prop.table(Acueducto)
+colnames(Acueducto)<-c("si","no")
+
+#que barrios cuentan con alcantarillado
+Alcantarillado<-table(ECvida[,c("barrio","p_165")])
+Alcantarillado<-prop.table(Alcantarillado)
+colnames(Alcantarillado)<-c("si","no")
+
+#que barrios cuentan con gas natural
+Gas<- table(ECvida[,c("barrio","p_171")])
+Gas<-prop.table(Gas)
+colnames(Gas)<-c("si","no")
+
+#que barrios tienen conexion a internet 
+Internet<-table(ECvida[ ,c("barrio","p_178")])
+Internet<-prop.table(Internet)
+colnames(Internet)<-c("si","no")
+
+#segun cada barrio que viviendas han sido afectadas
+Vivi.afect<-table(ECvida[,c("barrio","p_182")])
+Vivi.afect<-prop.table(Vivi.afect)
+colnames(Vivi.afect)<-c("ninguno","inundacion","avalancha","deslizamiento","hund.terreno","falla.geo","incendio")
+
+#como eliminan la basura por vivienda segun cada barrio
+basura<-table(ECvida[,c("barrio","p_183")])
+basura<-prop.table(basura)
+colnames<-c("ser.inf","patio","ca?o","entierran","queman","basurero.pub","comercializan","reutilizan","reciclador","servicio.aseo")
+
+#con que tipo sanitario cuentan las viviendas segun el barrio 
+Sanitario<-table(ECvida[,c("barrio","p_184")])
+Sanitario<-prop.table(Sanitario)
+colnames<-c("no.tiene","batajar","letrina","inodoro.sin.conx","inodoro.con.pozo","inodoro.con.alcan")
+```
+
+Estructuración de la base de datos
+
+```{r}
+#ECvida2 <- data.frame(Tipo.vivien.M, Tipo.pared.M, Agua.consumo, Energia, Acueducto, Alcantarillado, Gas, Internet,Vivi.afect,basura, Sanitario)
+
+#Datos completos, agregando las observaciones faltantes
+Encvida2.1 <- cbind(Tipo.vivien.M, Tipo.pared.M, Agua.consumo, Energia, Acueducto, Alcantarillado, Gas, Internet,
+                   Vivi.afect,basura, Sanitario)
+
+#Datos con las observaciones que no tienen valores faltantes
+Encvida2.2 <- cbind(Tipo.vivien.M, Tipo.pared.M, Agua.consumo, Energia, Acueducto, Alcantarillado, Gas, Internet,
+                   basura, Sanitario)
+
+
+```
+
+**Matriz normalizada**
+
+```{r}
+Encvida3.1 <- scale(Encvida2.1)
+Encvida3.2 <- scale(Encvida2.2, center = TRUE, scale = TRUE)
+```
+
+```
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+# Misma gráfica anterior pero con los datos escalados:
+pairs(ECvida3.2[,8:16], lower.panel = panel.smooth, upper.panel = panel.cor,
+      gap = 0, row1attop = FALSE)
+names(as.data.frame(ECvida3.2))
+```
+
+
+Haciendo los cluster
+
+```{r}
+library(ClustOfVar)
+Dendo <- hclustvar(Encvida3.2)
+#Dendograma <- hclust(dist(ECvida3.2))
+plot(Dendo)
+rect.hclust(Dendo, k = 2, border = 2:10)
+```
+
+```{r, message = F}
+library(factoextra)
+au1 <- prcomp(Encvida3.2)
+fviz_eig(au1)
+fviz_nbclust(x = Encvida3.2, FUNcluster = kmeans, method = "silhouette" )
+```
+
+
+El número optimo de grupos para esta dimension son tres
+#Mapas
