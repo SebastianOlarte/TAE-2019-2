@@ -1,0 +1,124 @@
+---
+title: "Dimension seguridad social"
+author: "Rafael Jménez"
+date: "26/2/2020"
+output: html_document
+---
+```{r}
+#install.packages("fread")
+install.packages("data.table")
+```
+
+1 - Caracterización de las dimensiones
+Los microdatos de la encuesta (las filas), representan las respuestas de los encuestados a una serie de preguntas. Estas
+se pueden agrupar en dimensiones como salud, educación, calidad de la vivienda, etc. El trabajo debe definir claramente
+las dimensiones con las que caracterizará a los barrios de Medellín y las preguntas que conformarán cada dimensión. La
+forma en que las respuestas a las preguntas se consolidan para conformar las dimensiones hacen parte del trabajo.
+
+Dimension 'Seguridad social'.
+
+Preguntas que conforman esta dimensión:
+
+1. Y califique en una escala desde 1 hasta 5, la calidad de ese transporte pÃºblico en su sector, barrio o vereda (P_322)
+2. Califique Usted, en una escala desde 1 hasta 5, la cobertura en el transporte pÃºblico en su sector, barrio o vereda en los Ãºltimos 12 meses (P_321)
+3. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: El cumplimiento de las normas de trÃ¡nsito o vias (P_320)
+4. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: El estado de los andenes y de los separadores de calles (P_319)
+5. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: La pavimentaciÃ³n y seÃ±alizaciÃ³n de las vias (P_318)
+6. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: ArborizaciÃ³n (P_317)
+7. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: La contaminaciÃ³n visual (P_316)
+8. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: Las basuras y los escombros en las calles (P_315) 
+9. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: El nivel del ruido (P_314)
+10. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: El estado de la contaminaciÃ³n de los rios y las quebradas (P_313)
+11. Califique Usted en una escala desde 1 hasta 5, la situaciÃ³n en su barrio o vereda, sobre: El estado de la contaminaciÃ³n del aire (P_312)
+12. Como se siente en el barrio o vereda donde vive? (P_283)
+
+
+
+2 - Agrupamiento
+Utilizando las variables construidas en cada dimensión se debe llevar a cabo un análisis de agrupamiento utilizando las
+técnicas vistas en el curso (agrupamiento jerárquico y K-Medias) u otras técnicas debidamente descritas y
+referenciadas.
+
+Se lee la base de datos:
+```{r}
+library(data.table)
+percepcion_ciudadana <- read.csv("encuesta_calidad_vida.csv", header = TRUE,sep=";",dec=",")
+percepcion_ciudadana <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-98,-99))
+
+
+percepcion_ciudadana
+```
+
+
+Se seleccionan las columnas de interes, solo se dejarán 4 columnas de las 12 preguntas seleccionadas debido a el procesamiento:
+
+```{r}
+percepcion_ciudadana_red <- percepcion_ciudadana[,c("encuesta_calidad.p_283",
+                                                    "encuesta_calidad.p_312",
+                                                    "encuesta_calidad.p_314",
+                                                    "encuesta_calidad.p_316")]
+
+percepcion_ciudadana_red_barrios <- percepcion_ciudadana[,c("encuesta_calidad.barrio",
+                                                            "encuesta_calidad.p_283",
+                                                            "encuesta_calidad.p_312",
+                                                            "encuesta_calidad.p_314",
+                                                            "encuesta_calidad.p_316" 
+                                                            )]
+
+percepcion_ciudadana_red_barrios
+```
+
+
+Estadísticos de resumen:
+
+```{r}
+summary(percepcion_ciudadana_red)
+```
+
+Cálculo de la desviación estándar:
+
+```{r}
+apply(percepcion_ciudadana_red,2,sd)
+```
+
+Grafico de la dispersión por pares:
+
+```{r}
+pairs(percepcion_ciudadana_red)
+```
+
+Cálculo de la correlación entre las variables:
+
+```{r}
+cor(percepcion_ciudadana_red)
+```
+
+```{r}
+n <- dim(percepcion_ciudadana_red_barrios)[1]
+n_vl <- round(n*0.9998)
+ix_vl <- sample(1:n, n_vl,replace = FALSE)
+X_tr <- percepcion_ciudadana_red_barrios[-ix_vl,c("encuesta_calidad.barrio",
+                                                  "encuesta_calidad.p_283",
+                                                  "encuesta_calidad.p_312",
+                                                  "encuesta_calidad.p_314",
+                                                  "encuesta_calidad.p_316"
+                                                  )]
+X_tr
+```
+
+Rpresentar con un diagrama:
+
+```{r}
+percepcion_dist = dist(X_tr)
+percepcion_dist_clust = hclust(percepcion_dist, method = "single")
+plot(percepcion_dist_clust)
+```
+
+Si queremos segmentar el comjunto de ciudades, en seis grupos:
+
+```{r}
+prcepcion_clust_4 = cutree(percepcion_dist_clust, k=6)
+plot(percepcion_dist_clust)
+rect.hclust(percepcion_dist_clust, k=6)
+```
+
