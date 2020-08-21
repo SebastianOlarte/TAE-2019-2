@@ -1,0 +1,1072 @@
+---
+author: Sebastián Olarte Jaraba & Jefferson Gamboa Betancur & Rafael Enrique Jimenez Cabrera
+date: "2/03/2020"
+title: ANÁLISIS Y AGRUPACIÓN DE LOS BARRIOS DE MEDELLÍN SEGÚN LAS DIMENSIONES DE LA ENCUESTA DE CALIDAD DE VIDA
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# INTRODUCCIÓN
+
+En este trabajo se busca hacer una caracterización de los diferentes barrios de la ciudad de Medellín a partir de información registrada en la encuesta de calidad de vida de la misma ciudad referentes al año 2018. Esta caracterización de los barrios se hará a partir del agrupamiento de la información de la encuesta en las diferentes dimensiones que abarca, para este trabajo se analizaran las siguientes dimensiones : la relacionada a la educación, la percepción ciudadana y a aspectos demográficos. La base de datos usada se toma del portal de datos abiertos [Medata](http://medata.gov.co/) sobre la [Encuesta Calidad De Vida](http://medata.gov.co/dataset/encuesta-calidad-de-vida) que con un total de 342 preguntas busca cuantificar las diferentes dimensiones de una sociedad.  
+Este analisis está realizado por partes, cada parte hace el analisis de los barrios por cada una de las dimensiones ya mencionadas, el orden de las dimensiones es el siguiente:  
+1) **EDUCACIÓN.**  
+2) **DEMOGRAFÍA.**    
+3) **PERCEPCIÓN CIUDADANA.**  
+
+## 1. DIMENSIÓN EDUCACIÓN
+
+En esta sección se pretende hacer una clasificación de los barrios de la ciudad de Medellín teniendo en cuenta los datos recolectados sobre educación. Las variables a analizar en este análisis de la dimensión educación se desprenden de la siguiente lista de preguntas plasmadas en la encuesta:  
+
+**1. Barrio o vereda:** Este es la variable principal, ya que se pretende hacer un análisis en los diferentes barrios de la ciudad de Medellín.  
+**2. Estrato de la Vivienda:**  Esta es una variable siempre fundamental a la hora de hacer un estudio de la población, servirá para definir por estrato los niveles de educación de las personas encuestadas.  
+**3. Sexo de la persona:** Que nos va a permitir diferenciar entre hombres y mujeres como actores principales dentro de la educación.  
+**4. Años cumplidos:** Lo que nos permitirá hacer una caracterizacion de los barrios por el promedio de edad de las personas que viven en ellos.  
+**5. ¿Sabe leer y escribir más de un párrafo?: ** Lo cual nos permitirá conocer si las personas de dichos barrios son o no personas analfabetas.  
+**6. ¿Actualmente estudia?:** Esta variable nos permitirá agrupar basados en si las personas residentes de dichos barrios son personas que estudian o no.  
+**7. ¿Último nivel de estudio aprobado (Título):** Esto nos permitirá conocer cuáles son los barrios que tienen personas con títulos más altos, titulos más bajos, pocos titulos, muchos titulos, o ningunos, etc.  
+**8. El carácter del establecimiento educativo (escuela, colegio, universidad u otra institución) en donde estudia o estudió el último curso o grado:** Lo cual nos permitirá distinguir a los barrios con personas que tienen acceso a la educación privada y aquellos que acceden a la educación pública.  
+**9. La educación brindada en los colegios y escuelas de su barrio, comuna vereda o corregimiento ha:** Esta variable que mide la percepción de las personas sobre la educación en su barrio, nos permitirá hacer una diferenciación entre los barrios que según sus habitantes han mejorado en educación y los que no, o incluso los que han empeorado.  
+
+### ADECUACIÓN DE DATOS:
+
+Lo primero que se hace entonces es cargar la base de datos, y seleccionar el rango de los datos que vamos a trabajar que para este analisis corresponde a los datos del 2018 y a las variables ya mencionadas.
+
+```{r, warning = FALSE, message = FALSE}
+# Se cargan todas las libresias a usar en el trabajo
+require(data.table)
+require(ggplot2)
+require(tidyverse)
+library(htmlwidgets)
+library(maptools)
+library(udunits2)
+library(rgdal)
+library(leaflet)
+library(VIM)
+library(dplyr)
+library(cluster)
+library(factoextra)
+library(purrr)
+library(rmarkdown)
+library(markdown)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r  }
+#Leer la base de datos y corregir los valores extraños y nulos por NAs
+encuesta <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-98,-99))
+
+
+##################################################################################################
+#Tomar los datos del 2018
+educacion <- encuesta %>% filter(encuesta_calidad.año == 2018) %>%
+                              select(encuesta_calidad.barrio,#Nombre de Barrio
+                                     encuesta_calidad.estrato,#Estrato
+                                     encuesta_calidad.p_15,#Sexo
+                                     encuesta_calidad.p_18,#Años cumplidos
+                                     encuesta_calidad.p_35,#sabe leer o escribir?
+                                     encuesta_calidad.p_36,#estudia actualmente?
+                                     encuesta_calidad.p_45,#Ultimo nivel de estudio
+                                     encuesta_calidad.p_49,#Caracter del establecimiento
+                                     encuesta_calidad.p_262#Percepcion de la educacion en el barrio
+                                     )
+#Para liberar la memoria del PC
+encuesta = NULL
+```
+```{r, warning= FALSE}
+attach(educacion)
+#Se cambian los nombres de las variables
+names(educacion) = c("barrio","estrato","sexo","edad","lee_escribe",
+                     "estudia_si_no","ult_nivel_estudio","tipo_institucion", "percep_educacion")
+#Ver informacion del data frame
+summary(educacion)
+```
+
+Ahora ya se tiene un data frame con los datos de interes de **30.934** registros, pero estos datos no están aun de la forma que nos es más convenientes para el problema que abordamos, ya que cada registro de este dataframe corresponde es a registros de personas, más no de barrios, por ello un barrio puede aparecer en varios registros, ya que varias personas pueden vivir en el mismo barrio. Por tanto, se procederá a organizar estos datos de tal manera que se tenga un solo registro por cada uno de los barrios relacionados en el dataframe. Para ello se hace el siguiente procedimiento que consiste en agrupar por cada barrio una tabla de frecuencias con las demas variables, asi se tendrá una completa información para cada barrio con respecto a las variables de interés.
+
+```{r}
+#Promedio de edad de las personas por barrio
+prom.edad <- tapply(educacion$edad, educacion$barrio, mean)
+  
+#Barrido de los barrios por estrato
+estrato <-table(educacion[,c("barrio","estrato")])
+colnames(estrato) <- c("Estr.1", "Estr.2", "Estr.3", "Estr.4", "Estr.5", "Estr.6")
+
+#Barrido de los barrios por sexo
+sexo <-table(educacion[,c("barrio","sexo")])
+colnames(sexo) <- c("Hombre", "Mujer")
+
+#Barrido de los barrios por lee_escribe
+lee_escribe <-table(educacion[,c("barrio","lee_escribe")])
+colnames(lee_escribe) <- c("Si.lee.escri", "No.lee.escri")
+
+#Barrido de los barrios por si estudia o no
+estudia <-table(educacion[,c("barrio","estudia_si_no")])
+colnames(estudia) <- c("Si.estud", "No.estud")
+
+#Barrido de los barrios por si ultimo nivel de estudio
+ult_nivel_estudio <-table(educacion[,c("barrio","ult_nivel_estudio")])
+colnames(ult_nivel_estudio) <- c("Ninguno", "Preesco", "Primaria", "Secund", "Media.acad","Media.tec",
+                                 "Tecnolog", "Univers","Especial", "Maestria", "Doctorado")
+
+#Barrido de los barrios por el tipo de institucion publica o privada
+tipo_institucion <-table(educacion[,c("barrio","tipo_institucion")])
+colnames(tipo_institucion) <- c("Establec.publico", "Estable.privado")
+
+#Barrido de los barrios por la percepcion de la educacion en el barrio
+percep_educacion <-table(educacion[,c("barrio","percep_educacion")])
+colnames(percep_educacion) <- c("edu.mejor", "edu.igual", "edu.peor")
+```
+```{r}
+matrix_educacion <- cbind(prom.edad, estrato, sexo, lee_escribe, estudia, ult_nivel_estudio,
+                          tipo_institucion, percep_educacion)
+df_educacion <- as.data.frame(matrix_educacion)
+paste("ESTRUCTURA DE EL DATAFRAME CON EL QUE SE TRABAJARÁ")
+str(df_educacion)
+paste("EN TOTAL HAY", nrow(df_educacion), "BARRIOS")
+```
+
+### CLUSTERIZACIÓN:
+
+El agrupamiento para esta dimensión se hará usando algoritmos de agrupamiento particionado, es decir, aquellos en los que de antemano se especifica el numero de grupos en los que se quiere dividir el conjunto de datos. Los algoritmos a usar son entonces el popular K-means en donde cada cluster está representado por su centroide, K-medoids que es una variación de K-means en donde cada cluster está representado por el individuo cuya distancia promedio entre él y todos los demás individuos del clusters es lo menor posible, esto lo convierte en el individuo más representativo del cluster. Y por ultimo usando el algoritmo CLARA (Clustering Large Applications o Agrupamiento para grandes aplicaciones si se traduce al español) el cual es una versión mejorada de K-medoids que hace un agrupamiento iterativo sobre subconjuntos de los datos originales hasta lograr agrupar a todas las observaciones. Para saber un poco más sobre estos dos algorimos de agrupamiento se puede visitar el siguiente blog: [www.sthda.com](http://www.sthda.com/english/articles/tag/pam-clustering/)
+
+### K - MEANS
+
+Lo primero es escalar el dataframe para que el algoritmo no tenga mayores problemas en hacer los clusters
+```{r, warning= FALSE}
+df_educacion_scale <- scale(df_educacion)
+```
+
+Ahora usaremos una función que nos permite identificar un numero K de cluster bastante adecuado para crear nuestros grupos buscando minimizar la suma de cuadrados total intercluster.
+
+```{r}
+fviz_nbclust(x = df_educacion_scale, FUNcluster = kmeans, method = "wss", k.max = 15) +
+          labs(title = "Número óptimo de clusters con K-means")
+```
+
+K = 6 parece ser un valor bastante optimo para crear nuestros grupos, ya que con K > 6 la suma de cuadrados internos decrece sin tanta pronunciacion.
+
+```{r}
+set.seed(12345)
+km_cluster <- kmeans(x = df_educacion_scale, centers = 6, nstart = 50)
+#Graficar los clusters
+fviz_cluster(object = km_cluster, data = df_educacion_scale, show.clust.cent = TRUE,
+             geom = "point", ellipse.type = "t", star.plot = TRUE, repel = FALSE) +
+              labs(title = "Resultados clustering K-means") +
+              theme_bw() +
+              theme(legend.position = "none")
+```
+
+LA CANTIDAD DE BARRRIOS EN CADA UNO DE LOS CLUSTERS ES:
+```{r, warning=FALSE}
+table(km_cluster$cluster)
+```
+
+LA SUMA DE CUADRADOS INTERNA ENTRE CADA CLUSTERS ES:
+```{r, warning=FALSE}
+km_cluster$withinss
+```
+
+LA SUMA TOTAL DE CUADRADOS INTERNA ENTRE LOS CLUSTERS ES:
+```{r, warning=FALSE}
+km_cluster$tot.withinss
+```
+
+LA SUMA TOTAL DE CUADRADOS EXTERNA ENTRE LOS CLUSTERS ES:
+```{r, warning=FALSE}
+km_cluster$betweenss
+```
+
+LA SUMA TOTAL DE CUADRADOS TANTO INTRA COMO EXTRA CLUSTER ES:
+```{r, warning= FALSE}
+km_cluster$totss
+```
+
+### K - MEDOIDS (PAM)
+
+Con este algoritmo la partición se hace ya no usando los centroides sino usando los medoids que no es más que el dato más representativo de cada cluster, es decir, es el elemento dentro del cluster cuya distancia promedio entre él y todos los demás elementos del mismo cluster es lo menor posible.. Este algoritmo es más robusto y menos sensible al ruido producido por los valores atipicos. En este paso se usaran dos tipos de distancias para hallar el mejor valor de K, una con distancia euclidian la cual es más sensible a valores atipicos por el termino cuadratico que se usa para calcularla y una distancia euclidiana la cual es menos sensible a valores atipicos, ya que su formula es lineal.
+
+```{r}
+#Distancia euclidea
+fviz_nbclust(x = df_educacion_scale, FUNcluster = pam, method = "wss", k.max = 15,
+             diss = dist(df_educacion_scale, method = "euclidean")) +
+              labs(title = "Número óptimo de clusters  K-medoids y distancia euclidea")
+
+#Distancia Manhattan
+fviz_nbclust(x = df_educacion_scale, FUNcluster = pam, method = "wss", k.max = 15,
+             diss = dist(df_educacion_scale, method = "manhattan")) +
+              labs(title = "Número óptimo de clusters  K-medoids y distancia manhattan")
+```
+
+Se ve como con la distancia manhattan la varianza intraclusters disminuye mucho más. Un valor optimo para K parece ser 5 grupos.
+
+```{r}
+#Se crean los clusters con los parametros elegidos
+set.seed(5500)
+kmedoids_cluster <- pam(x = df_educacion_scale, k = 5, metric = "manhattan")
+
+#Se calculan los medoides para luego ser mostrados en los clusters
+medoids <- prcomp(df_educacion_scale)$x
+medoids <- medoids[rownames(kmedoids_cluster$medoids), c("PC1", "PC2")]
+medoids <- as.data.frame(medoids)
+colnames(medoids) <- c("x", "y")
+
+# Se grafican los clusters
+fviz_cluster(object = kmedoids_cluster, data = df_educacion_scale, ellipse.type = "t",
+              geom = "point", repel = TRUE) +
+              theme_bw() +
+              geom_point(data = medoids, color = "firebrick", size = 3) +
+              labs(title = "Resultados clustering K-medoids o PAM") +
+              theme(legend.position = "none")
+```
+
+LA INFORMACIÓN INTERNA DE LOS CLUSTERS ES LA SIGUIENTE
+```{r, warning= FALSE}
+kmedoids_cluster$clusinfo
+colSums(kmedoids_cluster$clusinfo)
+```
+
+### CLUSTERING USANDO CLARA
+
+Ahora se va a hacer la clusterización usando CLARA, el cual es una mejora del cluster K-medoids para grandes volumenes de datos. Se harán varios ensayos usando valores entre 4 y 7 para k buscando encontrar el mejor conjunto de clusters.
+
+**K=4**
+```{r}
+set.seed(7620)
+clara_clusters4 <- clara(x = df_educacion_scale, k = 4, metric = "manhattan",
+                        samples = 50, pamLike = TRUE)
+
+#Se calculan los medoides para luego ser mostrados en los clusters
+medoids <- prcomp(df_educacion_scale)$x
+medoids <- medoids[rownames(clara_clusters4$medoids), c("PC1", "PC2")]
+medoids <- as.data.frame(medoids)
+colnames(medoids) <- c("x", "y")
+
+fviz_cluster(object = clara_clusters4, ellipse.type = "convex", geom = "point",
+             pointsize = 2.5, repel = TRUE) +
+            theme_bw() +
+            geom_point(data = medoids, color = "firebrick", size = 3) +
+            labs(title = "Resultados de clustering metodo CLARA k = 4") +
+            theme(legend.position = "none")
+```
+
+**K=5**
+```{r, warning= FALSE}
+set.seed(9870)
+clara_clusters5 <- clara(x = df_educacion_scale, k = 5, metric = "manhattan",
+                        samples = 50, pamLike = TRUE)
+
+#Se calculan los medoides para luego ser mostrados en los clusters
+medoids <- prcomp(df_educacion_scale)$x
+medoids <- medoids[rownames(clara_clusters5$medoids), c("PC1", "PC2")]
+medoids <- as.data.frame(medoids)
+colnames(medoids) <- c("x", "y")
+
+fviz_cluster(object = clara_clusters5, ellipse.type = "convex", geom = "point",
+             pointsize = 2.5, repel = TRUE) +
+            theme_bw() +
+            geom_point(data = medoids, color = "firebrick", size = 3) +
+            labs(title = "Resultados de clustering metodo CLARA k = 5") +
+            theme(legend.position = "none")
+```
+
+**K=6**
+```{r, warning= FALSE}
+set.seed(5000)
+clara_clusters6 <- clara(x = df_educacion_scale, k = 6, metric = "manhattan",
+                        samples = 50, pamLike = TRUE)
+
+#Se calculan los medoides para luego ser mostrados en los clusters
+medoids <- prcomp(df_educacion_scale)$x
+medoids <- medoids[rownames(clara_clusters6$medoids), c("PC1", "PC2")]
+medoids <- as.data.frame(medoids)
+colnames(medoids) <- c("x", "y")
+
+fviz_cluster(object = clara_clusters6, ellipse.type = "convex", geom = "point",
+             pointsize = 2.5, repel = TRUE) +
+            theme_bw() +
+            geom_point(data = medoids, color = "firebrick", size = 3) +
+            labs(title = "Resultados de clustering metodo CLARA k = 6") +
+            theme(legend.position = "none")
+```
+
+**K=7**
+```{r, warning= FALSE}
+set.seed(7000)
+clara_clusters7 <- clara(x = df_educacion_scale, k = 7, metric = "manhattan",
+                        samples = 50, pamLike = TRUE)
+
+#Se calculan los medoides para luego ser mostrados en los clusters
+medoids <- prcomp(df_educacion_scale)$x
+medoids <- medoids[rownames(clara_clusters7$medoids), c("PC1", "PC2")]
+medoids <- as.data.frame(medoids)
+colnames(medoids) <- c("x", "y")
+
+fviz_cluster(object = clara_clusters7, ellipse.type = "convex", geom = "point",
+             pointsize = 2.5, repel = TRUE) +
+            theme_bw() +
+            geom_point(data = medoids, color = "firebrick", size = 3) +
+            labs(title = "Resultados de clustering metodo CLARA k = 7") +
+            theme(legend.position = "none")
+```
+
+El analisis de los clusters usando CLARA para diferentes valores de K es el siguiente:
+
+**PARA CLARA CON K = 4**
+```{r, warning= FALSE}
+clara_clusters4$clusinfo
+colSums (clara_clusters4$clusinfo)
+```
+**PARA CLARA CON K = 5**
+```{r, warning= FALSE}
+clara_clusters5$clusinfo
+colSums (clara_clusters5$clusinfo)
+```
+**PARA CLARA CON K = 6**
+```{r, warning= FALSE}
+clara_clusters6$clusinfo
+colSums (clara_clusters6$clusinfo)
+```
+**PARA CLARA CON K = 7**
+```{r, warning= FALSE}
+clara_clusters7$clusinfo
+colSums (clara_clusters7$clusinfo)
+```
+
+Calificando las diferentes clusterizaciones usando CLARA por el total del promedio de las distancias intracluster **(av_diss)** vemos que el modelo que menor promedio de las distancias intracluster presenta es el que se hace con 4 grupos, este tiene un av_diss = 52.48 mientras que el av_diss para los modelos de 5, 6 y 7 grupos son respectivamente 54.58, 63.26, 75.53. Ahora comparando este agrupamiento usand CLARA con k = 4 con el agrupamiento hecho con k-medoids para k = 5, vemos que el av_diss de CLARA es menor al av_diss de k-medoids, el cual es de 66.19. Por tanto el agrupamiento que parece mejor es el de CLARA con k = 5. Este será el agrupamiento que se usará para delimitar los barrios segun sus respectivos grupos en el mapa de Medellín.
+
+Ahora analicemos un poco los resultados del clustering hecho.
+
+```{r, warning= FALSE}
+dfcluster = as.data.frame(clara_clusters4$clustering)
+dfcluster = dfcluster %>% rownames_to_column("barrio")
+colnames(dfcluster)  = c("barrio", "grupo")
+
+grupo1 = dfcluster[dfcluster$grupo == 1,]
+grupo2 = dfcluster[dfcluster$grupo == 2,]
+grupo3 = dfcluster[dfcluster$grupo == 3,]
+grupo4 = dfcluster[dfcluster$grupo == 4,]
+```
+**ALGUNOS BARRIOS DEL GRUPO 1**
+```{r}
+head(grupo1,4)
+#sevisualizaron todos los datos durante el proceso de desarrollo para poder hacer una interpretacion
+#grupo1
+```
+**ALGUNOS BARRIOS DEL GRUPO 2**
+```{r}
+head(grupo2,4)
+#sevisualizaron todos los datos durante el proceso de desarrollo para poder hacer una interpretacion
+#grupo2
+```
+**ALGUNOS BARRIOS DEL GRUPO 3**
+```{r}
+head(grupo3,4)
+#sevisualizaron todos los datos durante el proceso de desarrollo para poder hacer una interpretacion
+#grupo3
+```
+**ALGUNOS BARRIOS DEL GRUPO 4**
+```{r}
+head(grupo4,4)
+#se visualizaron todos los datos durante el proceso de desarrollo para poder hacer una interpretacion
+#grupo4
+```
+
+Viendo los datos por grupos de clusters, llama la atención mucho el caso del grupo 2 en donde se ve que se han consolidado barrios casi que en su totalidad de estratos altos como lo son ***SANTA FE***, ***SURAMERICANA***, ***LOS CONQUISTADORES***, ***PATIO BONITO***, ***SAN LUCAS***, ***SAN DIEGO***, ***LAURELES***, ***LOS COLORES***, ***LOS ALPES***, ***LA FLORESTA***, ***LA AMÉRICA***, ***LA MOTA***, ***EL DIAMANTE Nº 2***, ***EL TESORO***, ***ESTADIO***, y varios más. Lo que tienen de comun estos barrios es que son barrios de estratos altos en donde viven personas que tienen el dinero para pagar colegios o universidades privadas, tambien son personas que logran alcanzar altos niveles de estudio, ya que muchos tienen la posibilidad de dedicarse de lleno a sus estudios sin tener que pausarlos por falta de dinero por ejemplo.Por el contrario el grupo numero 4 parece ser un grupo de barrios bastantes marginales de estratos bajos, en donde historicamente las personas han tenido bajos niveles de educacion, personas que en su mayoria estudian en colegios y universidades publicas como son los barrrios ***ANDALUCIA***, ***BELLO HORIZONTE***, ***BLANQUIZAL***, ***JUAN XXIII - LA QUIEBRA***, ***LA CRUZ***, ***LAS BRISAS***, ***NUEVA VILLA DE LA IGUANA***, ***PAJARITO***, ***PICACHITO***, ***SAN JAVIER Nº 2***, ***SANTO DOMINGO SABIO Nº 2*** y otros más.
+
+### MAPEO DE LOS BARRIOS SEGÚN LOS CLUSTERS:
+
+```{r, warning = FALSE}
+#Se lee el mapa y se configuran los nombre de los barrios con otro standar
+barrios_med = readOGR("./data/Barrio_Vereda.shp",layer="Barrio_Vereda")
+nombres_barrios=iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
+```
+
+```{r}
+#Se crea el mapa de medellin y se le añaden los nombres de los barrios
+m = leaflet(barrios_med)
+m = addTiles(m)
+m = addPolygons(m, popup = nombres_barrios)
+m = addTiles(m)
+m
+```
+
+Ahora se va a crear el vector de colores para poder pintar cada barrio por su color de grupo
+
+```{r}
+cluster4 = clara_clusters4$clustering
+cluster4 <- gsub("1","orange", cluster4)
+cluster4 <- gsub("2","darkblue", cluster4)
+cluster4 <- gsub("3","red", cluster4)
+cluster4 <- gsub("4","forestgreen", cluster4)
+colores = cluster4
+base <- arrange(educacion, barrio)
+base_barrio <- distinct(as.data.frame(base$barrio))
+```
+
+La distribución de los barrios de Medellín segun la clusterización hecha y los colores dados es la siguiente:
+
+```{r}
+m = addPolygons(m, popup=base_barrio,color = colores)
+m
+```
+
+
+## 2. DIMENSIÓN DEMOGRÁFICA
+
+La demografía es un estudio, donde el interés principal es obtener información del comportamiento de las población, de cómo evolucionan y estructuran en base a análisis estadístico.  
+
+Se realizará un estudio demográfico en base a el último año de encuesta donde se pretende estudiar el comportamiento de la población.  
+
+¿Será que la cantidad de personas que viven por hogar tendrá alguna relación con el estrato socioeconómico? o ¿la cantidad de personas que viven por hogar habrán llegado a vivir toda su vida o no en su hogar, y si es así, tendrá alguna relación con los estrátos socioeconómicos?  
+
+```{r, message = FALSE, warning = FALSE, error = FALSE, include=FALSE, echo = FALSE, cache=TRUE}
+fread("Variables demográficas.txt")
+ECvida1 <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-99,-98, -77))
+#Filtro por el año 2018
+ECvida1 <- ECvida1[encuesta_calidad.año == 2018,]
+
+ECvida <- ECvida1[,c("encuesta_calidad.año", "encuesta_calidad.barrio", "encuesta_calidad.p_10", "encuesta_calidad.p_12", "encuesta_calidad.p_15", "encuesta_calidad.p_18", "encuesta_calidad.p_20", "encuesta_calidad.p_23", "encuesta_calidad.p_24", "encuesta_calidad.p_308")]
+
+names(ECvida) <- c("año", "barrio", "p_10", "p_12", "p_15", "p_18", "p_20", "p_23", "p_24", "p_308")
+```
+
+### ADECUACIÓN DE DATOS:
+
+En la lectura de la base de la encuesta de calidad de vida se tomó en primer lugar el último año donde se obtuvieron 30934 observaciones, en siguiente lugar se corrigieron los nombres de los barrios puesto que estos como se muestran en la base son diferentes los nombres a como estan en la base de datos de los mapas. Se mostrará cómo quedó la base con datos con las primeras y últimas variables seleccionadas para la dimensión demográfica.
+
+Las variables seleccionadas de la dimensión demográfica para la encuesta de la caldiad de vida según el diccionario aportado para de esta encuesta aparte del año y los barrios son:  
+
+* **p_10:** Estrato de vivienda.
+
+* **p_12:** Cuántas personas componen este hogar.
+
+* **p_15:** Sexo, donde 1 es para los hombres y 2 para las mujeres.
+
+* **p_18:** Años cumplidos, donde cada número representa el año, excepto desde los 30 en adelante, que representa de la siguiente forma.
+
+  + 30: de 30 a 34 años cumplidos.
+
+  + 31: de 31 a 35 años cumplidos.
+
+  + 32: de 40 a 44 años cumplidos.
+
+  + 33: de 45 a 49 años cumplidos.
+
+  + 34: de 50 a 54 años cumplidos.
+
+  + 35: de 55 a 59 años cumplidos.
+
+  + 36: de 60 a 64 años cumplidos.
+
+  + 37: de 65 a 69 años cumplidos.
+
+  + 38: de 70 a 74 años cumplidos.
+
+  + 39: de 75 a 79 años cumplidos.
+
+  + 40: de 80 y más años cumplidos.
+
+* **p_20:** Estado civil actual, donde cada número representa lo siguiente.
+
+  + 1: Soltero(a).
+
+  + 2: Casado(a).
+
+  + 3: Viudo(a).
+
+  + 4: Separado(a) o divorciado(a).
+
+  + 5: No esta casado(a) y vive en pareja hace menos de 2 años.
+
+  + 6: No esta casado(a) y vive en pareja hace más de 2 años o más.
+
+* **p_23:** De acuerdo con su cultura, pueblo o rasgos físicos, es o se reconoce como:
+ 
+  + -98: No sabe.
+
+  + 1: Indígena.
+
+  + 2: Negro, mulato, afrocolombiano, afrodecendiente.
+
+  + 3: Mestizo
+
+  + 4: Blanco.
+
+  + 5: Raizal - Sanandresano
+
+  + 6: Rom - Gaitano
+
+* **p_24:** Ha vivido toda su vida en este municipio.
+
+  + -99: No responde.
+
+  + -98: No sabe.
+
+  + 1: Si.
+
+  + 2: No.
+
+* **p_308:** ¿Usted a planificado?
+
+  + -99: No responde.
+
+  + -98: No sabe.
+
+  + 1: Si.
+
+  + 2: No.
+
+Base de Datos Después de haber seleccionado las variables a estudiar en la dimensión Demográfica
+
+```{r}
+head(ECvida,3); tail(ECvida,3)
+```
+
+**Conteo de valores "NULL" en la base de datos de 2018**
+
+```{r}
+colSums(is.na(ECvida))
+```
+
+Como las respuestas negativas son de "No sabe" (-98) y "no responde" (-99) y "no aplica" (-88) se aglomeran como NA's, estas observaciones no representan información de interés, aparte de eso, estos valores representan en gran medida la base de datos y al realizar los análisis tendrían un gran conflicto en los resultados, es por ello que estas variables se deberan hacer en un análisis aparte.
+
+Al realizar un conteo de valores nulos o faltantes en la encuesta, se observa que las variables P_23: Etnia; P_308: Si planifican o no, representan significativamente sesgos. En base a esto se decidirá sacar estas variables donde p_23: Etnia, representa el $8.15%$ de las observaciones faltantes y p_308: Si planifica $41,65\%$, pero p_24: Si ha vivido toda la vida en este municipio, que representa apenas el $0.0453 \%$ sólo se procederan a eliminar estas observaciones, debido a que no habrá ninguna diferencia, dado el echo de que para cada barrio tocará hacerle un promedio por barrios.
+
+```{r}
+ECvida <- ECvida[,c(-8, -10)]
+ECvida <- ECvida[!is.na(ECvida$p_24),]
+ECvida$p_10 <-  as.factor(ECvida$p_10) 
+ECvida$p_15 <-  as.factor(ECvida$p_15) 
+ECvida$p_20 <- as.factor(ECvida$p_20) 
+ECvida$p_24 <- as.factor(ECvida$p_24)
+```
+
+
+### UN RESUMÉN ESTADÍSTICO DE LAS VARIABLES
+
+* **Estrato de vivienda (p_10):**
+
+```{r}
+b <- barplot(prop.table(table(ECvida$p_10))*100, main = "Proporción del estrato de vivienda")
+text(b, c(1,1), round(prop.table(table(ECvida$p_10))*100,3), adj=c(0.5, -0.5))
+```
+
+Se observa que la gran cantidad de los encuestados se encuentran entre los estratos 2 y 3, sumando el $65.6 \%$. A continuación se mostrará un resumen de estas observaciones.
+
+```{r}
+summary(ECvida$p_10)
+```
+
+* **Cuántas personas componen este hogar (p_12):**
+
+```{r}
+b <- barplot(prop.table(table(ECvida$p_12))*100, main = "Proporción de personas por hogar")
+text(b, c(1,1), round(prop.table(table(ECvida$p_12))*100,1), adj=c(0.5, -0.5))
+```
+
+Aquí se observa que la gran mayoría de los hogares tienen apróximadamente entre 2 a 6 personas donde representan el $87.71 \%$ de la población encuestada, y la gran mayoría de los hores tienen 4 personas por hogar. Hay que notar que hay hogares donde se observan muchas personas por hogar, teniendo entre 10, 11, 12, 13 hasta 14 personas, donde todos estos representan el $1.36 \%$ de la población encuestada.
+
+```{r}
+summary(ECvida$p_12)
+```
+
+* **Género del encuestado (p_15):**
+
+```{r}
+b <- barplot(prop.table(table((ECvida$p_15)))*100, main = "Proporción del Género", names.arg = c("Hombre", "Mujer"))
+text(b, c(1,1), round(prop.table(table(ECvida$p_15))*100,2), adj=c(0.5, -0.5))
+```
+
+Se observa que la gran mayoría, las mujeres fueron en cuestadas en referencia a los hombres.
+
+```{r}
+summary(ECvida$p_15)
+```
+
+* **Años cumplidos (p_18):**
+
+```{r}
+table(ECvida$p_18)
+```
+
+Al realizar un conteo de los años cumplidos se observa que hay un pequeño conflicto con la definición de la variable, puesto que para los números del diccionario muestra diferente información a la suministrada por la variable.
+
+```{r}
+hist(ECvida$p_18, probability = T, col = "#00B5FA", main = "Histograma de Edad", xlab = "Edades")
+lines(density(ECvida$p_18), col = "red")
+```
+
+Aquí en este gráfico se observa un gran problema, se observan que hay dos poblaciones mezcladas puesto que hay dos modas, esto podría diferenciarse a través de otra variable, categorizando quizá por género o separando la población de los adultos jóvenes y adultos mayores.
+
+```{r}
+summary(ECvida$p_18)
+```
+
+Este resumen estadístico no es muy válido por el echo de tener dos poblaciones mezcladas, pero se puede evidenciar que la mínima edad registrada es de 0 (niños aún en el vientre) y hasta un máximo de 103 años.
+
+* **Estado civil actual (p_20):**
+
+Recordar que:
+
+ + 1: Soltero(a).
+ + 2: Casado(a).
+ + 3: Viudo(a).
+ + 4: Separado(a) o divorciado(a).
+ + 5: No esta casado(a) y vive en pareja hace menos de 2 años.
+ + 6: No esta casado(a) y vive en pareja hace más de 2 años o más.
+
+```{r}
+b <- barplot(prop.table(table(ECvida$p_20))*100, main = "Proporción del estado civíl")
+text(b, c(1,1), round(prop.table(table(ECvida$p_20))*100,2), adj=c(0.6, -0.6))
+```
+
+Se observa que la más de la mitad de la población en el 2018 se encuentra soltera y que sólo el $21,66\%$ se encuentra casa, pero hay que tener en cuenta que la población no se encuentra casada pero vive con la pareja hace más de 2 año representa el $11.9 \%$ y la que no esta casa pero vive en con la pareja hace menos de dos años representa el $2.24 \%$.
+
+```{r}
+summary(ECvida$p_20)
+```
+
+* **Ha vivido toda su vida en este municipio (p_24):**
+
+```{r}
+b <- barplot(prop.table(table(ECvida$p_24))*100, main = "Proporción de personas que han vivido \n toda su vida en el municipio", names.arg = c("Si", "No"))
+text(b, c(1,1), round(prop.table(table(ECvida$p_24))*100,2), adj=c(0.6, -0.6))
+```
+
+Lo único que se observa es que la mayor cantidad de encuestados en el 2018 han viviendo en el municipio toda su vida.
+
+Ahora, en base a los análisis antes presentados se procederá a responder cada pregunta antes propuesta.
+
+¿Será que la cantidad de personas que viven por hogar tendrá alguna relación con el estrato socioeconómico? o ¿la cantidad de personas que viven por hogar habrán llegado a vivir toda su vida o no en su hogar, y si es así, tendrá alguna relación con los estrátos socioeconómicos?
+
+```{r}
+qplot(x = p_10, y = p_12, data = ECvida, geom = c("boxplot"), xlab = "Estrato socioeconómico", ylab = "Personas por hogar") + stat_summary(fun.y = mean, geom = "point", color = "red") + ggtitle("¿La cantidad de personas que viven por hogar\n tendrá alguna relación con el estrato socioeconómico?") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+Cómo se puede apreciar, no hay diferencias significativas por la cantidad de personas que viven por hogar en los estatros socioeconómicos, además de eso, el promedio (los puntos rojos) de los estratos socioeconómicos parecen ir decreciendo a medida que que los estratos crecen, esto quiere decir que hay menos personas por hogar a medida que hay un mayor estrato socioeconómico, pero cabe resaltar que estas diferencias no son muy apreciables.
+
+```{r}
+Han_Vivido <- ECvida$p_24
+levels(Han_Vivido) <- c("SI", "NO")
+
+qplot(x = Han_Vivido, y = p_12, data = ECvida, geom = "boxplot", ylab = "Personas por hogar", xlab = "Si han vivido toda su vida en el municipio") + stat_summary(fun.y = mean, geom = "point", color = "red") + ggtitle("¿La cantidad de personas que viven por hagar\n habrán vivido toda su vida en municipio?") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+No hay diferencias significativas con la cantidad de personas por hogar que han vivido toda la vida en el municipio, además el promedio de las que sí han vivido es mucho máyor que las personas que no han vivido toda su vida en el municipio.
+
+¿Ahora habrá alguna diferencia entre ambas implicaciones antes presentadas?
+
+```{r}
+qplot(x = p_10, y = p_12, data = ECvida, geom = c("boxplot"), xlab = "Estrato socioeconómico", ylab = "Personas por hogar", color = Han_Vivido) + ggtitle("La cantidad de personas que viven por hogar tendrán alguna\n relación con los estratos y las personas que han vivido toda la vida") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+Lo mismo se puede evidenciar, las diferencias son tan pocas que no son significativas aún categorizando por las personas que han vivido toda su vida en el municipio y el estrato socioeconómico.
+
+Ahora nos fijaremos si habrá diferencias con el estrato y el género.
+
+```{r}
+Genero <- ECvida$p_15
+levels(Genero) <- c("Hombre", "Mujer")
+qplot(x = p_10, y = p_12, data = ECvida, geom = c("boxplot"), xlab = "Estrato socioeconómico", ylab = "Personas por hogar", color = Genero) + ggtitle("La cantidad de personas que viven por hogar tendrán alguna\n relación con los estratos y el género") + theme(plot.title = element_text(hjust = 0.5))
+```
+Tampoco se observa diferencias significativas entre los estratos categorizado por el género en las personas que viven por hogar, aunque la variabilidad de los hombres en el estrato 5 es más pequeña, pero todas son apróximadamente iguales.
+
+**Categorizando por barrio para cada variable**
+
+* **Variable Cuantitativa**
+
+```{r}
+#Personas promedio que componen el hogar
+Personas <- tapply(ECvida$p_12, ECvida$barrio, mean)
+
+#Edad promedio por barrio
+Edades <- tapply(ECvida$p_18, ECvida$barrio, mean)
+```
+
+* **Variables Cualitativas**
+
+```{r}
+#Estrato promedio por barrio
+Estrato <- prop.table(table(ECvida[,c("barrio", "p_10")]))
+colnames(Estrato) <-  c("Estrato1", "Estrato2", "Estrato3", "Estrato4", "Estrato5", "Estrato6")
+
+#Sexo promedio (TENER CUIDADO)
+Sexo  <- prop.table(table(ECvida[,c("barrio", "p_15")]))
+colnames(Sexo) <- c("Hombre", "Mujer")
+
+#Estado civil promedio por barrio
+Estado_Civil  <- prop.table(table(ECvida[,c("barrio", "p_20")]))
+colnames(Estado_Civil) <- c("Soltero", "Casado", "Viudo", "Separado_Divorsiado", "NCasado_Menos2años", "NCasado_Mas2a")
+
+#Ha vivido toda la vida en este municipio en promedio
+Tiempo_Vivido <- prop.table(table(ECvida[,c("barrio", "p_24")]))                  
+colnames(Tiempo_Vivido) <- c("SI", "NO")
+```
+
+* **Estructuración de la base de datos**
+
+```{r}
+#Datos completos
+ECvida_Nueva <- cbind(Estrato, Personas, Sexo, Edades, Estado_Civil, Tiempo_Vivido)
+
+ECvida_Nueva <- as.data.frame(ECvida_Nueva)
+
+head(ECvida_Nueva,3)
+```
+
+Como se observa la categorización que se hizo es para poder obtener el promedio para cada una de las observaciones referente a cada barrio, esto quiere decir que cada columna representa el promedio por barrio para los estratos, para hombres y mujeres, para el estado civil, ect... A continuación se mostrará que representa cada una de las variables indicadas.
+
+* **Estrato (p_10):** Representan las columnas con los nombres "Estrato1", "Estrato2", "Estrato3", "Estrato4", "Estrato5", "Estrato6", donde se refiere al estrato socioeconómico promedio por barrio del 1 hasta el 6 respectivamente.
+
+* **Personas (p_12):** Esta representado por la columna "Personas" y es el número promedio de personas por barrio.
+
+* **Género (p_15):** Esta representado por las columnas "Hombre" y "Mujer" y es el número promedio de hombres y mujeres por cada barrio.
+
+* **Edades (p_18):** Esta representado por la columba "Edades" y representa el número promedio de las edades por barrio.
+
+* **Estado Civíl (p_20):** Esta representado por las columnas "Soltero", "Casado", "Viudo", "Separado_Divorsiado", "NCasado_Menos2años", "NCasado_Mas2a" y es el promedio del estado civil (según sea el caso) por barrio. Es de recordar que el orden en que se presentan tiene el mismo significado de la variable "p_20" sólo que discriminado por barrio respectivamente. Es decir:
+
+  + "Soltero" representa por barrio a p_20 = 1
+
+  + "Casado" representa por barrio a p_20 = 2
+
+  + "Viudo" representa por barrio a p_20 = 3
+
+  + "Separado_Divorsiado" representa por barrio a p_20 = 4
+
+  + "NCasado_Menos2años" representa por barrio a p_20 = 5
+
+  + "NCasado_Mas2a" representa por barrio a p_20 = 6
+
+* **Tiempo_Vivido (p_24):** Esta representado por las columas "Si" y "No" y es el número promedio de las personas que si y no han vivido toda su vida por barrio.
+
+### CLUSTERIZACIÓN:
+
+En primer lugar se debe de elegir el número optimo de clusters que nos permita hacer el mejor agrupamiento.
+
+```{r}
+ECvida_Normalizada <- scale(ECvida_Nueva)
+
+fviz_nbclust(ECvida_Normalizada, kmeans, method = "gap_stat")
+```
+```{r}
+fviz_nbclust(ECvida_Normalizada, kmeans, method = "wss")
+```
+```{r}
+fviz_nbclust(ECvida_Normalizada, kmeans, method = "silhouette")
+```
+
+En los gráficos antes presentados ninguno es concluyente, en base a esto se mirará a través del método ward (Murtagh and Legendre 2014) para el agrupamiento y en base al gráfico visualizaremos el posible agrupamiento.
+
+```{r}
+hc3 <- agnes(ECvida_Normalizada, method = "ward")
+pltree(hc3, cex = 0.3, hang = -1)
+```
+
+Los mejores grupos posibles son 3. En base a estos resultados se utilizaran diferentes métodos para hacer clusterización.
+
+### K - MEANS
+
+A continuación se observará los barrios que están por grupos con el método de kmeans
+
+```{r}
+#Cluster
+cluster_k_meens <- kmeans(ECvida_Normalizada, 3, nstart = 25)
+#Número de barrios por cluster
+table(cluster_k_meens$cluster)
+```
+
+**Gráfico del Cluster**
+
+```{r}
+fviz_cluster(object = cluster_k_meens, data = ECvida_Normalizada, show.clust.cent = TRUE,
+             ellipse.type = "norm", star.plot = TRUE, geom = "point",repel = TRUE) +
+  labs(title = "Resultados clustering K-means") +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+El agrupamiento es bastante complejo de dimensionar, por ello se procederá con otro método de clustering.
+
+### CLUSTERING USANDO CLARA
+
+Este método es desarrollado para grandes bases de datos, por ello la robustez de el cluster es mucho más preciso.
+
+**Cantidad de barrios por grupo**
+```{r}
+clarax <- clara(ECvida_Normalizada, 3)
+table(clarax$clustering)
+```
+
+**Gráfico del cluster usando CLARA**
+
+```{r}
+# Cluster plot
+fviz_cluster(clarax, stand = T, geom = "point", pointsize = 1, ellipse.type = "t", repel = TRUE) +
+            theme_bw() +
+            labs(title = "Resultados clustering CLARA") +
+            theme(legend.position = "none")
+```
+
+### AGRUPAMIENTO JERARQUICO:
+
+En el agrupamiento jerarquico se cortó el dendograma de tal forma que se pudieran obtener los tres mejores grupos, ya que se descubrió que estos presentan los mejores resultados.
+
+```{r}
+clust_jerar <- hcut(ECvida_Nueva, k = 3, stand = TRUE)
+fviz_dend(clust_jerar, rect = TRUE, cex = 0.5,
+          k_colors = c("#FF0000","#00FF00", "#0000FF","#FF00FF"))
+```
+
+En el grafico se puede ver claramente que haciendo tres grupos se pueden cubrir eficientemente todas las observaciones.
+
+### MAPEO DE LOS BARRIOS SEGÚN LOS CLUSTERS:
+
+Ahora se procederá a plasmar estos tres grupos de barrios sobre el mapa de Medellín.
+
+```{r}
+#Mapa simple
+m2 <- leaflet(barrios_med)
+m2 <- addTiles(m2)
+```
+
+```{r}
+#Superoponemos los barrios
+m2 <- addPolygons(m2, popup = nombres_barrios)
+m2 <- addTiles(m2)
+```
+
+```{r, warning=FALSE, message=FALSE,}
+#Color a los barrios
+colores <- sample(x = c("mediumblue", "green", "yellow"), size = length(nombres_barrios), replace = TRUE)
+m2 <- addPolygons(m, popup = clust_jerar, color = colores)
+m2
+```
+
+## 3. DIMENSIÓN PERCEPCIÓN CIUDADANA
+
+Preguntas que conforman esta dimensión:
+
+1. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: El estado de los andenes y de los separadores de calles (P_319)  
+2. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: La pavimentación y señalización de las vias (P_318)  
+3. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: Arborización (P_317)  
+4. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: La contaminación visual (P_316)  
+5. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: Las basuras y los escombros en las calles (P_315)  
+6. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: El nivel del ruido (P_314)  
+7. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: El estado de la contaminación de los rios y las quebradas (P_313)  
+8. Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: El estado de la contaminación del aire (P_312)  
+9. Como se siente en el barrio o vereda donde vive? (P_283)  
+
+### ADECUACIÓN DE DATOS:
+
+```{r, warning=FALSE, echo=FALSE}
+#Leer la base de datos y corregir los valores extraños por NAs
+percepcion_ciudadana <- fread("encuesta_calidad_vida.csv", encoding = "UTF-8", na = c("NULL",-88,-98,-99), select = c("encuesta_calidad.barrio", "encuesta_calidad.año","encuesta_calidad.p_319","encuesta_calidad.p_318","encuesta_calidad.p_317","encuesta_calidad.p_316","encuesta_calidad.p_315","encuesta_calidad.p_314","encuesta_calidad.p_313","encuesta_calidad.p_312","encuesta_calidad.p_283"))
+
+#Tomar los datos del 2018
+percepcion_ciudadana.2018 <- percepcion_ciudadana %>% filter(encuesta_calidad.año == 2018) %>%
+                              select(encuesta_calidad.barrio, # Nombre de Barrio
+                                     encuesta_calidad.p_312, # Contaminacion del aire 
+                                     encuesta_calidad.p_313, # Contaminacion de rios y quebradas
+                                     encuesta_calidad.p_314, # Nivel de ruido
+                                     encuesta_calidad.p_315, # Basuras y escombros en las calles
+                                     encuesta_calidad.p_316, # Contaminacion Visual
+                                     encuesta_calidad.p_317, # Arborizacion
+                                     encuesta_calidad.p_318, # Señalizacion y pavimentacion de las vias
+                                     encuesta_calidad.p_319, # Estado de andenes y separadores
+                                     encuesta_calidad.p_283 # Como se siente en el barrio ?
+                                     )
+#Para liberar la memoria del PC
+percepcion_ciudadana = NULL
+
+#Se cambian los nombres de las variables
+names(percepcion_ciudadana.2018) = c("barrio", "contaminacion.aire", "contaminacion.hidricos", "ruido", "basuras.escombros", "contaminacion.visual", "arborizacion", "senalizacion.pavimentacion", "andenes.separadores", "sentimiento.barrio")
+```
+
+```{r}
+# Analisis de frecuencias barrios y contaminacion.aire
+contaminacion.aire <-table(percepcion_ciudadana.2018[,c("barrio","contaminacion.aire")])
+contaminacion.aire <- round(prop.table(contaminacion.aire),5)
+
+# Analisis de frecuencias barrios y contaminacion.hidricos
+contaminacion.hidricos <-table(percepcion_ciudadana.2018[,c("barrio","contaminacion.hidricos")])
+contaminacion.hidricos <- round(prop.table(contaminacion.hidricos),5)
+
+# Analisis de frecuencias barrios y ruido
+ruido <-table(percepcion_ciudadana.2018[,c("barrio","ruido")])
+ruido <- round(prop.table(ruido),5)
+
+# Analisis de frecuencias barrios y basuras.escombros
+basuras.escombros <-table(percepcion_ciudadana.2018[,c("barrio","basuras.escombros")])
+basuras.escombros <- round(prop.table(basuras.escombros),5)
+
+# Analisis de frecuencias barrios y contaminacion.visual
+contaminacion.visual <-table(percepcion_ciudadana.2018[,c("barrio","contaminacion.visual")])
+contaminacion.visual <- round(prop.table(contaminacion.visual),5)
+
+# Analisis de frecuencias barrios y arborizacion
+arborizacion <-table(percepcion_ciudadana.2018[,c("barrio","arborizacion")])
+arborizacion <- round(prop.table(arborizacion),5)
+
+# Analisis de frecuencias barrios y senalizacion.pavimentacion
+senalizacion.pavimentacion <-table(percepcion_ciudadana.2018[,c("barrio","senalizacion.pavimentacion")])
+senalizacion.pavimentacion <- round(prop.table(senalizacion.pavimentacion),5)
+
+# Analisis de frecuencias barrios y andenes.separadores
+andenes.separadores <-table(percepcion_ciudadana.2018[,c("barrio","andenes.separadores")])
+andenes.separadores <- round(prop.table(andenes.separadores),5)
+
+# Analisis de frecuencias barrios y sentimiento.barrio
+sentimiento.barrio <-table(percepcion_ciudadana.2018[,c("barrio","sentimiento.barrio")])
+sentimiento.barrio <- round(prop.table(sentimiento.barrio),5)
+```
+
+Ahora se concatenan todas estas variables para crear ahora sí los datos con los que se hará el agrupamiento
+
+```{r}
+mat_percepcion_ciudadana <- cbind(contaminacion.aire, contaminacion.hidricos, ruido, basuras.escombros, contaminacion.visual,
+                       arborizacion, senalizacion.pavimentacion, andenes.separadores, sentimiento.barrio)
+df_percepcion_ciudadana <- as.data.frame(mat_percepcion_ciudadana)
+head(df_percepcion_ciudadana,3)
+```
+
+### CLUSTERIZACIÓN:
+
+Ahora se hará un agrupamiento de los datos usando la tecnica de k-means, con esto se obtendrán divididos en cada grupo los barrios que son más similares, lo primero será normalizar los datos y escoger el mejor valor para 'k'
+
+```{r}
+datos_normalizados <- scale(df_percepcion_ciudadana)
+```
+
+### K - MEANS
+
+```{r}
+#Se determina el mejor valor de 'k' según los siguientes 3 criterios
+par(mfrow = c(1, 3))
+fviz_nbclust(datos_normalizados, kmeans, method = "gap_stat")
+fviz_nbclust(datos_normalizados, kmeans, method = "wss")
+fviz_nbclust(datos_normalizados, kmeans, method = "silhouette")
+```
+
+De la gráfica podemos notar que el valor de 'k' que mejor se ajusta a los datos es k = 2
+
+```{r}
+#Ejecutar clustering
+clust_kmeans <- kmeans(datos_normalizados, 2, nstart = 25)
+#Grafica el cluster
+fviz_cluster(object = clust_kmeans, data = datos_normalizados, show.clust.cent = TRUE,
+             ellipse.type = "norm", geom = "point", star.plot = TRUE, repel = TRUE) +
+              labs(title = "Resultado clustering K-means") +
+              theme_bw() +
+              theme(legend.position = "none")
+#Numero de barrios por cada cluster
+table(clust_kmeans$cluster)    
+```
+
+Del agrupamiento se puede notar que en el grupo azul están los barrios más azotados por la violencia y la falta de recursos económicos, se pueden ver respuestas extremas en barrios como Popular y Cabecera San Antonio de Prado, otros barrios que pertencen a este grupo son Santo Domingo Sabio N°1, Kennedy, la Hondonada entre otros, en el grupo rojo quedaron agrupados los barrios donde están los estratos medios y más altos como Castropol, el Diamante, entre otros... Aún así k-means es un algoritmo muy sensible a datos solapados, por tanto se probará con otros algoritmos.
+
+### K - MEDOIDS (PAM)
+
+En este algoritmo no se usan las medias de los centroides para partir los datos en diferentes grupos sino las medias de los medioids
+
+```{r}
+clust_pam <- pam(datos_normalizados, 2, metric = "manhattan")
+# Visualizar
+fviz_cluster(object = clust_pam, data = datos_normalizados, ellipse.type = "t",
+             repel = TRUE, geom = "point") +
+              theme_bw() +
+              labs(title = "Resultados clustering PAM") +
+              theme(legend.position = "none")
+
+table(clust_pam$cluster)
+```
+
+Usando este algoritmo los resultados son similares al k-means, pero se puede ver que hay datos que antes estaban clasificados en el grupo rojo que ahora están en el grupo azul, ya que habían sido incluidos en este grupo debido al ruido como el barrio Castropol. Se ha mejorado un poco la clasificación ya que se reduce la cantidad de datos solapados.
+
+### CLUSTERING USANDO CLARA
+
+Para este ejercicio se puede ver como mejora la precision de los grupos de cluster en cuanto a la cantidad de observaciones que tienen.
+
+```{r}
+clara_clusters <- clara(x = datos_normalizados, k = 2, metric = "manhattan", stand = TRUE,
+                        samples = 50, pamLike = TRUE)
+
+# Grafica
+fviz_cluster(object = clara_clusters, ellipse.type = "convex", geom = "point",
+              pointsize = 2.5) +
+            theme_bw() +
+            labs(title = "Resultados clustering CLARA") +
+            theme(legend.position = "none")
+table(clarax$clustering)
+```
+
+
+#### AGRUPAMIENTO JERARQUICO:
+
+Por ultimo se hará una clusterizacion usando el dendrograma que es tipico de un agrupamiento jerarquico. Se tomaran 2 grupos para este agrupamiento.
+
+```{r}
+clust_jerar <- hcut(datos_normalizados, k = 2, stand = TRUE)
+fviz_dend(clust_jerar, rect = TRUE, cex = 0.5,
+          k_colors = c("#FF0000","#00FF00", "#0000FF","#FF00FF"))
+```
+
+**CONCLUSION**
+
+Al realizar el agrupamiento de los datos según las preguntas de la encuesta que componen la dimensión "Percipción ciudadana" utilizando las técnicas de agrupamiendo k-means, PAM clustering, Clarax clustering y Hierarchical clustering, se puede ver como nuestra hipótesis inicial de que los datos quedaban muy bien agrupados en dos grupos que podrían llamar "Barrios con percepción ciudadana buena" y "Barrios con percepción ciudadana media/baja", sobre todo en la salida del algoritmo Clarax Clustering que es el más preciso de todos. Al evaluar Clarax con 3 grupos se solapan muchos datos, en cambio en el caso de 2 grupos, se pueden notar graficamente estos grupos bien definidos.
+
+### MAPEO DE LOS BARRIOS SEGÚN LOS CLUSTERS:
+
+```{r}
+m3 = leaflet(barrios_med)
+m3 = addTiles(m3)
+```
+
+Ahora superpongamos los barrios:
+
+```{r}
+m3 = addPolygons(m3, popup = nombres_barrios)
+m3 = addTiles(m3)
+```
+
+Ahora pongamosle color a los barrios por grupos. Tenemos agrupados los barrios por caracteristicas que llamamos "Barrios con percepción ciudadana buena" y "Barrios con percepción ciudadana media/baja".
+
+```{r}
+clarax_clusters <- clarax$clustering
+clarax_clusters <- gsub("1","seagreen", clarax_clusters)
+clarax_clusters <- gsub("2","yellow", clarax_clusters)
+```
+
+Se carga el vector de colores
+
+```{r}
+colores = clarax_clusters
+base <- arrange(percepcion_ciudadana.2018, barrio)
+base_barrio <- distinct(as.data.frame(base$barrio))
+```
+
+Ahora veamos el mapa con estos colores:
+
+```{r}
+m3 = addPolygons(m3, popup= base_barrio ,color = colores)
+m3
+```
+
+### REFERENCIAS
+
+[rstudio-pubs-static.s3.amazonaws.com](https://rstudio-pubs-static.s3.amazonaws.com/330387_5a40ca72c3b14824acedceb7d34618d1.html)  
+[eriqande.github.io](http://eriqande.github.io/rep-res-web/lectures/making-maps-with-R.html)  
+[r-bloggers.com](https://www.r-bloggers.com/lang/uncategorized/308)  
+[rpubs.com/kfhidalgoh](https://rpubs.com/kfhidalgoh/)  
+[rdocumentation.org](https://www.rdocumentation.org/packages/cluster/versions/2.1.0)  
+[sthda.com](http://www.sthda.com/english/articles/tag/pam-clustering/)  
+[afit-r.github.io](https://afit-r.github.io/kmeans_clustering)  
+
+
+
+
