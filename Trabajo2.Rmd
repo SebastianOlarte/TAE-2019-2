@@ -1,0 +1,2241 @@
+---
+title: "Segundo Trabajo TAE"
+author: "Juan Esteban Restrepo Velez & Sebastian Olarte Jaraba"
+date: "10/3/2020"
+output: 
+  html_document: 
+    css: Rmarkdown.css
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#### <span>Universidad Nacional de Colombia sede Medellín</span> {.place}
+
+#### Resumen {.letra}
+En este trabajo se abarcan los ejercicios aplicados del texto guía "An Introduction to Statistical Learning with Applications in R" de la materia técnicas de aprendizaje estadístico impartida en la Universidad Nacional de Colombia sede Medellín.
+
+# <span class="titulo_capitulo">Capítulo 4.7</span> {#cap4_7}
+
+
+## <span class="titulo_ejercicio">Ejercicio 10</span> {.letra}
+
+This question should be anwsered using the <span class="texto_rojo">Weekly</span> data set, which is part of the <span class="texto_rojo">ISLR</span> package. This data is similar in nature to the <span class="texto_rojo">Smarket</span> data from this chapter’s lab, except that it contains 1, 089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+```{r, warning=FALSE, message=FALSE}
+library(corrplot)
+library(psych)
+library(MASS)
+library(class)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(ggplot2)
+library(vcd)
+library(GGally)
+```
+### <span class="negrita_azul">(a)</span> {.letra}
+Produce some numerical and graphical summaries of the <span class="texto_rojo">Weekly</span> data. Do there appear to be any patterns?
+
+```{r, warning=FALSE, message=FALSE}
+library(ISLR)
+data(Weekly)
+attach(Weekly)
+rbind(head(Weekly,5), tail(Weekly,5))
+summary(Weekly)
+#glimpse(Weekly)
+#Se crea la matriz de correlacion
+Weekly.corr <- round(cor(Weekly[,-9]),2)
+#Weekly.corr
+#Se grafica la parte superior de la matriz de correlacion
+col <- colorRampPalette(c("red","green","yellow"))
+corrplot(Weekly.corr, method = "pie", type = "upper", shade.col = NA,
+         tl.col = "black", tl.srt = 45, addCoef.col = "black",
+         addshade = "all", col = col(300))
+#se hace un diagrama de pares junto con las correlaciones
+chart.Correlation(Weekly[,-9], histogram = FALSE, pch = 19)
+```
+
+<span class="negrita_verde">Respuesta: Segun las graficas anteriores, la de la matriz de correlacion y la del grafico de pares con su respectiva correlacion se puede ver que solo las variables año y volumen tienen una alta relacion lineal, dicha relacion es positiva.
+</span>
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Use the full data set to perform a logistic regression with <span class="texto_rojo">Direction</span> as the response and the five lag variables plus <span class="texto_rojo">Volume</span> as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+
+```{r}
+logist.fit = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Weekly, family = binomial)
+summary(logist.fit)
+```
+
+<span class="negrita_verde">Respuesta: Lag2 es el unico predictor con un alto valor significativo. Su p-valor es de 0.0296 < 0.05. Y su valor β2 = 0.05844, este valor positivo lo que indica es que si el valor en el mercado fue positivo hace dos semanas, es más probable que lo sea en el día actual.
+</span>
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+```{r}
+logist.probab <- predict(logist.fit, type = "response")
+logist.test <- rep("Down", length(logist.probab))
+logist.test[logist.probab > 0.5] = "Up"
+matriz.confusion <- table(logist.test, Direction)
+matriz.confusion
+mosaic(matriz.confusion, shade = T, colorize = T, 
+       gp = gpar(fill = matrix(c("green3", "blue2", "blue2", "green3"), 2, 2)))
+```
+
+<span class="negrita_verde">Respuesta: El porcentaje de predicciones correctas es de: (54 + 557) / (54 + 557 + 48 + 430) = 56.1%. En las semanas en las que el mercado sube, la regresión logística es correcta la mayor parte del tiempo: 557 / (557 + 48) = 92.1% de las boservaciones. En las semanas en las que el mercado baja, la regresión logística ya no es tan precisa solo predice bn el 54 / (430 + 54) = 11.2% de las oservaciones.
+</span> 
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Now fit the logistic regression model using a training data periodfrom 1990 to 2008, with <span class="texto_rojo">Lag2</span> as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+data.train = (Year < 2009)
+data.0910 = Weekly[!data.train, ]
+
+logist.fit = glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = data.train)
+
+logist.probab = predict(logist.fit, data.0910, type = "response")
+logist.test = rep("Down", length(logist.probab))
+logist.test[logist.probab > 0.5] = "Up"
+
+Direction.0910 = Direction[!data.train]
+table(logist.test, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", mean(logist.test == Direction.0910)*100, "%")
+```
+
+<span class="negrita_verde">Respuesta: El porcentaje de predicciones correctas es del 62.5%, por lo tanto el test error rate es de 100% - 62.5% = 37.5%. Además, para aquellas semanas con un valor de mercado al alza, el modelo clasifica correctamente el 56/(56+5) = 91,8% de las observaciones; mientras que para las semanas con un valor de mercado a la baja, el modelo acierta en un 9/(9+34) = 20,93% de las veces
+</span> 
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Repeat (d) using LDA.
+
+```{r}
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = data.train)
+lda.test = predict(lda.fit, data.0910)
+table(lda.test$class, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", mean(lda.test$class == Direction.0910)*100, "%")
+```
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Repeat (d) using QDA.
+
+```{r}
+qda.fit = qda(Direction ~ Lag2, data = Weekly, subset = data.train)
+qda.test = predict(qda.fit, data.0910)
+table(qda.test$class, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(qda.test$class == Direction.0910)*100,1), "%")
+```
+
+### <span class="negrita_azul">(g)</span> {.letra}
+Repeat (d) using KNN with K = 1.
+
+```{r}
+train.X = as.matrix(Lag2[data.train])
+test.X = as.matrix(Lag2[!data.train])
+train.Direction = Direction[data.train]
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(knn.pred == Direction.0910)*100,1), "%")
+```
+
+### <span class="negrita_azul">(h)</span> {.letra}
+Which of these methods appears to provide the best results on this data?
+
+<span class="negrita_verde">Respuesta: Los porcentajes de predicciones correctas para cada uno de los modelos es:
+Regresion Logistica = 62.5% ***** LDA = 62.5% ***** QDA = 58.7% ***** KNN = 50% ***
+Por lo tanto, los modelos de regresion logistica y LDA son los que mejores resultados arrojan para este conjunto de datos.
+</span> 
+
+### <span class="negrita_azul">(i)</span> {.letra}
+Experiment with different combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.
+
+<span class="negrita_verde"> Para este ejercicio se experimentará con las variables que tienen más peso sobre el modelo de regresion logistica original, las cuales son Lag1 con un valor de β1 = -0.041, Lag2 con β2 = 0.058 y Lag4 con β4 = -0.027.
+</span>
+
+```{r, echo=FALSE}
+print("REGRESION LOGISTICA CON Lag1 Y Lag2")
+```
+
+```{r}
+logist.fit = glm(Direction ~ Lag1 + Lag2, data = Weekly, family = binomial, subset = data.train)
+logist.probab = predict(logist.fit, data.0910, type = "response")
+logist.test = rep("Down", length(logist.probab))
+logist.test[logist.probab > 0.5] = "Up"
+Direction.0910 = Direction[!data.train]
+#table(logist.test, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(logist.test == Direction.0910)*100,3), "%")
+print("REGRESION LOGISTICA CON Lag1, Lag2 y Lag4")
+```
+
+```{r}
+logist.fit = glm(Direction ~ Lag1 + Lag2 + Lag4, data = Weekly, family = binomial, subset = data.train)
+logist.probab = predict(logist.fit, data.0910, type = "response")
+logist.test = rep("Down", length(logist.probab))
+logist.test[logist.probab > 0.5] = "Up"
+Direction.0910 = Direction[!data.train]
+#table(logist.test, Direction.0910)
+
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(logist.test == Direction.0910)*100,3), "%")
+print("LDA CON Lag1 y Lag2")
+```
+
+```{r}
+lda.fit = lda(Direction ~ Lag2 + Lag1, data = Weekly, subset = data.train)
+lda.test = predict(lda.fit, data.0910)
+#table(lda.test$class, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(lda.test$class == Direction.0910)*100,3), "%")
+print("LDA CON Lag1, Lag2 y Lag4")
+```
+
+```{r}
+lda.fit = lda(Direction ~ Lag2 + Lag1 + Lag4, data = Weekly, subset = data.train)
+lda.test = predict(lda.fit, data.0910)
+#table(lda.test$class, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(lda.test$class == Direction.0910)*100,3), "%")
+print("LDA CON INTERACCION ENTRE Lag1 y Lag2")
+```
+
+```{r}
+lda.fit = lda(Direction ~ Lag2:Lag1, data = Weekly, subset = data.train)
+lda.test = predict(lda.fit, data.0910)
+#table(lda.test$class, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(lda.test$class == Direction.0910)*100,3), "%")
+print("LDA CON INTERACCION: ENTRE Lag1 Y Lag2, ENTRE Lag2 Y Lag4")
+```
+
+```{r}
+lda.fit = lda(Direction ~ Lag2:Lag1 + Lag2:Lag4, data = Weekly, subset = data.train)
+lda.test = predict(lda.fit, data.0910)
+#table(lda.test$class, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(lda.test$class == Direction.0910)*100,3), "%")
+print("QDA CON INTERACCION: ENTRE Lag1 y Lag2, ENTRE Lag2 y Lag4")
+```
+
+```{r}
+qda.fit = qda(Direction ~ Lag2:Lag1 + Lag2:Lag4, data = Weekly, subset = data.train)
+qda.test = predict(qda.fit, data.0910)$class
+#table(qda.test, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(qda.test == Direction.0910)*100,3), "%")
+print("QDA CON INTERACCION: ENTRE Lag1 y Lag2, ENTRE Lag2 y Lag4, ENTRE Lag1 y Lag4")
+```
+
+
+```{r}
+qda.fit = qda(Direction ~ Lag2:Lag1 + Lag2:Lag4 + Lag1:Lag4, data = Weekly, subset = data.train)
+qda.test = predict(qda.fit, data.0910)$class
+#table(qda.test, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(qda.test == Direction.0910)*100,3), "%")
+print("QDA CON Lag2 Y RAIZ DE Lag2")
+```
+
+```{r}
+qda.fit = qda(Direction ~ Lag2 + sqrt(abs(Lag2)), data = Weekly, subset = data.train)
+qda.test = predict(qda.fit, data.0910)$class
+#table(qda.test, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(qda.test == Direction.0910)*100,3), "%")
+print("QDA CON Lag2 Y RAIZ DE Lag2, Lag1 Y RAIZ DE Lag1")
+```
+
+```{r}
+qda.fit = qda(Direction ~ Lag2 + sqrt(abs(Lag2)) + Lag1 + sqrt(abs(Lag1)), data = Weekly, subset = data.train)
+qda.test = predict(qda.fit, data.0910)$class
+#table(qda.test, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(qda.test == Direction.0910)*100,3), "%")
+print("KNN CON K=10")
+```
+
+```{r}
+knn.pred = knn(train.X, test.X, train.Direction, k = 10)
+#table(knn.pred, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(knn.pred == Direction.0910)*100,3), "%")
+print("KNN CON K=50")
+```
+
+```{r}
+knn.pred = knn(train.X, test.X, train.Direction, k = 50)
+#table(knn.pred, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(knn.pred == Direction.0910)*100,3), "%")
+print("KNN CON K=100")
+```
+
+```{r}
+knn.pred = knn(train.X, test.X, train.Direction, k = 100)
+#table(knn.pred, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(knn.pred == Direction.0910)*100,3), "%")
+print("KNN CON K=200")
+```
+
+```{r}
+knn.pred = knn(train.X, test.X, train.Direction, k = 200)
+#table(knn.pred, Direction.0910)
+```
+
+```{r, echo=FALSE}
+paste("PORCENTAJE DE PREDICCIONES CORRECTAS =", round(mean(knn.pred == Direction.0910)*100,3), "%")
+```
+
+<span class="negrita_verde">Respuesta: Después de varios experimentos con los diferentes algoritmos y diferentes variables se ve que los que proporcionan mejores resultados son la Regresión Logística inicial y el LDA inicial, ambos usan un solo predictor el cual es Lag2 y presentan la misma test error rate, la cual  es de 100% - 62.5% = 37.5%. Los siguientes mejores resultados es la Regresión Logística con los predictores Lag1, Lag2 y Lag4 y el LDA también con los tres predictores Lag1, Lag2 y Lag4, ambos tienen la misma test error rate de 100% - 60.6 % = 39.4%
+</span> 
+
+## <span class="titulo_ejercicio">Ejercicio 11</span> {.letra}
+
+In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.
+```{r, warning=FALSE, message=FALSE}
+library(ISLR)
+library(corrplot)
+library(psych)
+library(MASS)
+library(class)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(ggplot2)
+library(vcd)
+library(GGally)
+library(caret)
+```
+### <span class="negrita_azul">(a)</span> {.letra}
+Create a binary variable, mpg01, that contains a 1 if mpg contains a value above its median, and a 0 if mpg contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the data.frame() function to create a single data set containing both mpg01 and the other Auto variables.
+
+```{r, warning=FALSE, message=FALSE}
+rbind(head(Auto,5), tail(Auto,5))
+summary(Auto)
+```
+
+```{r, warning=FALSE, message=FALSE}
+attach(Auto)
+mpg01 = rep(0, length(mpg))
+mpg01[mpg > median(mpg)] = 1
+Auto = data.frame(Auto, mpg01)
+rbind(head(Auto,5), tail(Auto,5))
+str(Auto)
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Explore the data graphically in order to investigate the association between mpg01 and the other features. Which of the other features seem most likely to be useful in predicting mpg01? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+```{r, warning=FALSE, message=FALSE}
+matr.corr <- round(cor(Auto[,-9]),2)
+#matr.corr
+
+col <- colorRampPalette(c("red","yellow","blue1"))
+corrplot(matr.corr, method = "shade", type = "lower", shade.col = NA,
+         tl.col = "black", tl.srt = 45, addCoef.col = "black",
+         addshade = "all", col = col(300), diag = FALSE)
+#se hace un diagrama de pares junto con las correlaciones
+chart.Correlation(Auto[,-9], histogram = FALSE, pch = 19)
+```
+
+<span class="negrita_verde">Respuesta: Se nota gracias al grafico de la matriz de correlaciones que mpg01 tiene una alta correlacion lineal negativa con las variables cylinders, displacement, horsepower y weight. Además de tener una alta correlacion positiva con la variable mpg por obvias razones.
+</span> 
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Split the data into a training set and a test set.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(123)
+indice <- createDataPartition(y = Auto$mpg01, p = 0.7, list = FALSE, times = 1)
+Auto.train = Auto[indice, ]
+Auto.test = Auto[-indice, ]
+mpg01.test = mpg01[-indice]
+```
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Perform LDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r}
+# LDA
+lda.fit = lda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto.train)
+lda.pred = predict(lda.fit, Auto.test)
+prop.correct = mean(lda.pred$class == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA MODELO LDA =", round((1 - prop.correct)*100,1), "%")
+```
+
+
+<span class="negrita_verde">Respuesta: Error de prueba del 9.5%</span> 
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Perform QDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r, warning=FALSE, message=FALSE}
+# QDA
+qda.fit = qda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto.train)
+qda.pred = predict(qda.fit, Auto.test)
+prop.correct = mean(qda.pred$class == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA MODELO QDA =", round((1 - prop.correct)*100,1), "%")
+```
+
+<span class="negrita_verde">Respuesta: Error de prueba del 9.5%</span> 
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r}
+#REGRESION LOGISTICA
+logist.fit = glm(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto.train, 
+    family = binomial)
+logist.probs = predict(logist.fit, Auto.test, type = "response")
+logist.pred = rep(0, length(logist.probs))
+logist.pred[logist.probs > 0.5] = 1
+prop.correct = mean(logist.pred == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA REGRESION LOGISTICA =", round((1 - prop.correct)*100,1), "%")
+```
+
+<span class="negrita_verde">Respuesta: Error de prueba del 11.2%</span> 
+
+### <span class="negrita_azul">(g)</span> {.letra}
+Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain? Which value of K seems to perform the best on this data set?
+
+```{r}
+train.X = cbind(cylinders, weight, displacement, horsepower)[indice, ]
+test.X = cbind(cylinders, weight, displacement, horsepower)[-indice, ]
+train.mpg01 = mpg01[indice]
+set.seed(1)
+# KNN(k=1)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 1)
+prop.correct = mean(knn.pred == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA CON KNN (K=1) =", round((1 - prop.correct)*100,1), "%")
+```
+
+```{r}
+# KNN(k=10)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 10)
+prop.correct = mean(knn.pred == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA CON KNN (K=10) =", round((1 - prop.correct)*100,1), "%")
+```
+
+```{r}
+# KNN(k=50)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 50)
+prop.correct = mean(knn.pred == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA CON KNN (K=50) =", round((1 - prop.correct)*100,1), "%")
+```
+
+```{r}
+# KNN(k=100)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 100)
+prop.correct = mean(knn.pred == mpg01.test)
+#round(prop.correct,3)
+```
+```{r, echo=FALSE}
+paste("ERROR DE PRUEBA CON KNN (K=100) =", round((1 - prop.correct)*100,1), "%")
+```
+
+<span class="negrita_verde">Respuesta: El mejor valor de K para este conjunto de datos es de K=10 ya que nos da el menor error de prueba el cual es de 10.3%
+</span> 
+
+## <span class="titulo_ejercicio">Ejercicio 12</span> {.letra}
+
+This problem involves writing functions.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Write a function, Power(), that prints out the result of raising 2 to the 3rd power. In other words, your function should compute 23 and print out the results. 
+*Hint: Recall that x^a raises x to the power a. Use the print() function to output the result.*
+
+```{r, warning=FALSE, message=FALSE}
+Power = function() {
+    2^3
+}
+print(Power())
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Create a new function, Power2(), that allows you to pass any two numbers, x and a, and prints out the value of x^a. You can do this by beginning your function with the line
+
+    > Power2 =function (x,a){
+
+You should be able to call your function by entering, for instance,
+
+    > Power2 (3,8)
+
+on the command line. This should output the value of 38, namely, 6,561.
+
+```{r, warning=FALSE, message=FALSE}
+Power2 = function(x, a) {
+    x^a
+}
+Power2(3, 3)
+```
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Using the Power2() function that you just wrote, compute 10^3, 8^17, and 131^3.
+
+```{r, warning=FALSE, message=FALSE}
+Power2(10, 3)
+```
+
+```{r, warning=FALSE, message=FALSE}
+Power2(8, 17)
+```
+
+```{r, warning=FALSE, message=FALSE}
+Power2(131, 3)
+```
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Now create a new function, Power3(), that actually returns the result x^a as an R object, rather than simply printing it to the screen. That is, if you store the value x^a in an object called result within your function, then you can simply return() this return() result, using the following line:
+
+return (result )
+
+The line above should be the last line in your function, before the } symbol.
+
+```{r, warning=FALSE, message=FALSE}
+Power3 = function(x, a) {
+    result = x^a
+    return(result)
+}
+```
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Now using the Power3() function, create a plot of f(x) = x2. The x-axis should display a range of integers from 1 to 10, and the y-axis should display x2. Label the axes appropriately, and use an appropriate title for the figure. Consider displaying either the x-axis, the y-axis, or both on the log-scale. You can do this by using log=‘‘x’’, log=‘‘y’’, or log=‘‘xy’’ as arguments to the plot() function.
+
+```{r, warning=FALSE, message=FALSE}
+x = 1:10
+plot(x, Power3(x, 2), log = "xy", ylab = "Logaritmo de y = x^2", xlab = "Logaritmo de x", 
+    main = "Logaritmo de x versus Logaritmo de x^2")
+```
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Create a function, PlotPower(), that allows you to create a plot of x against x^a for a fixed a and for a range of values of x. For instance, if you call
+
+> PlotPower (1:10 ,3)
+
+then a plot should be created with an x-axis taking on values 1, 2, . . . , 10, and a y-axis taking on values 13, 23, . . . , 103.
+
+```{r, warning=FALSE, message=FALSE}
+PlotPower = function(x, a) {
+    plot(x, Power3(x, a), ylab = "X^a")
+}
+PlotPower(1:10, 3)
+```
+
+## <span class="titulo_ejercicio">Ejercicio 13</span> {.letra}
+
+Using the Boston data set, fit classification models in order to predict whether a given suburb has a crime rate above or below the median. Explore logistic regression, LDA, and KNN models using various subsets of the predictors. Describe your findings.
+
+```{r, warning=FALSE, message=FALSE}
+library(ISLR)
+library(corrplot)
+library(psych)
+library(MASS)
+library(class)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(ggplot2)
+library(vcd)
+library(GGally)
+library(caret)
+```
+
+```{r, warning=FALSE, message=FALSE}
+attach(Boston)
+str(Boston)
+#summary(Boston)
+#rbind(head(Boston,5), tail(Boston,5))
+crimen.class = rep(0, length(crim))
+crimen.class[crim > median(crim)] = 1
+Boston = data.frame(Boston, crimen.class)
+```
+
+```{r, warning=FALSE, message=FALSE}
+matr.corr <- round(cor(Boston[,]),2)
+matr.corr <- round(cor(Boston),2)
+#matr.corr
+#summary(matr.corr)
+col <- colorRampPalette(c("firebrick1","forestgreen"))
+corrplot(matr.corr, method = "pie", type = "lower", shade.col = NA,
+         tl.col = "black", tl.srt = 45, addshade = "all", col = col(400), diag = FALSE)
+```
+
+```{r, warning=FALSE}
+#Se crean los datos de entreno y de prueba
+set.seed(10)
+train <- createDataPartition(y = Boston$crimen.class, p = 0.6, list = FALSE, times = 1)
+Boston.train = Boston[train, ]
+Boston.test = Boston[-train, ]
+crimen.class.test = crimen.class[-train]
+```
+
+```{r, warning=FALSE}
+#REGRESION LOGISTICA 1
+logist.fit = glm(crimen.class ~ . - crimen.class - crim, data = Boston, subset = train,
+                 family = binomial, 
+    )
+
+logist.probs = predict(logist.fit, Boston.test, type = "response")
+logist.pred = rep(0, length(logist.probs))
+logist.pred[logist.probs > 0.5] = 1
+mean(logist.pred != crimen.class.test)*100
+```
+```{r, warning=FALSE}
+#REGRESION LOGISTICA 2
+logist.fit = glm(crimen.class ~ . -crimen.class -crim -zn -chas -rm -ptratio -black -medv,
+                 data = Boston, subset = train, family = binomial)
+
+logist.probs = predict(logist.fit, Boston.test, type = "response")
+logist.pred = rep(0, length(logist.probs))
+logist.pred[logist.probs > 0.5] = 1
+mean(logist.pred != crimen.class.test)*100
+```
+
+<span class="negrita_verde">Respuesta: Se crearon dos modelos de regresion logistica. El primero usando todas las variables excepto crimen por obvias razones, este tiene una tasa de error de prueba de 8.91%. El segundo modelo se construyó eliminando algunas variables que tienen muy poca correlacion con la variable dependiente como son *zn*, *chas*, *rm*, *ptratio*, *black* y *medv*, la tasa de error de prueba de este es de 10.4%, por lo cual el primer modelo es mejor predictor.
+</span>
+
+```{r, warning=FALSE}
+# LDA 1
+lda.fit = lda(crimen.class ~ . -crimen.class -crim, data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crimen.class.test)*100
+```
+```{r, warning=FALSE}
+# LDA 2
+lda.fit = lda(crimen.class ~ . -crimen.class -crim -zn -chas -rm -ptratio -black -medv,
+                 data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crimen.class.test)*100
+```
+```{r, warning=FALSE}
+#LDA 3
+lda.fit = lda(crimen.class ~ . - crimen.class - crim - chas - tax - lstat - indus - age, 
+              data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crimen.class.test)*100
+```
+
+<span class="negrita_verde">Respuesta: Se crearon tres modelos de LDA.  
+El primero usando todas las variables con tasa de error del 15.35%.  
+El segundo excluyendo las variables *zn*, *chas*, *rm*, *ptratio*, *black*, *medv* con tasa de errror del 14.85%.  
+El tercero excluyendo las variables *chas*, *tax*, *lstat*, *indus*, *age* con tasa de error del 11.39%.  
+Por tanto el mejor modelo predictivo es el **tercero**.
+</span>
+
+```{r, warning=FALSE}
+# KNN
+train.X = cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, 
+                 lstat, medv)[train, ]
+test.X = cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, 
+                lstat, medv)[-train, ]
+train.crimen.class = crimen.class[train]
+set.seed(1)
+
+# KNN(k=1)
+knn.pred = knn(train.X, test.X, train.crimen.class, k = 1)
+mean(knn.pred != crimen.class.test)*100
+
+# KNN(k=10)
+knn.pred = knn(train.X, test.X, train.crimen.class, k = 10)
+mean(knn.pred != crimen.class.test)*100
+
+# KNN(k=100)
+knn.pred = knn(train.X, test.X, train.crimen.class, k = 100)
+mean(knn.pred != crimen.class.test)*100
+```
+<span class="negrita_verde">Respuesta: Haciendo las predicciones con todas las variables para KNN con valores de K=1, K=10, K=100, se tienen respectivamente las siguientes tasas de error de prueba: *5.94%*, *11.39%* y *23.27%*. Por lo que el mejor es cuando K=1.
+</span>
+
+```{r, warning=FALSE}
+# KNN(k=10) CON UN SUBCONJUNTO DE LAS VARIABLES
+train.X = cbind(zn, indus, nox, age, dis, rad, ptratio, black, medv)[train, ]
+test.X = cbind(zn, indus, nox, age, dis, rad, ptratio, black, medv)[-train, ]
+
+#(K=1)
+knn.pred = knn(train.X, test.X, train.crimen.class, k = 1)
+mean(knn.pred != crimen.class.test)*100
+#(K=10)
+knn.pred = knn(train.X, test.X, train.crimen.class, k = 10)
+mean(knn.pred != crimen.class.test)*100
+```
+
+<span class="negrita_verde">Respuesta: Haciendo las predicciones para un subconjunto de las variables para KNN se tiene los siguientes resultados:  
+K = 1 --> tasa de error = 13.86%  
+K = 10 --> tasa de error = 14.85%
+</span>
+
+# <span class="titulo_capitulo">Capítulo 8.4</span> {#cap8_4}
+
+## <span class="titulo_ejercicio">Ejercicio 7</span> {.letra}
+
+In the lab, we applied random forests to the Boston data using mtry=6 and using ntree=25 and ntree=500. Create a plot displaying the test error resulting from random forests on this data set for a more comprehensive range of values for mtry and ntree. You can model your plot after Figure 8.10. Describe the results obtained.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(MASS)
+library(randomForest)
+```
+
+```{r, warning=FALSE, message=FALSE}
+#summary(Boston)
+#Crear los subconjuntos de entreno y de prueba
+p = ncol(Boston) - 1
+p.2 = trunc(p/2)
+p.3 = trunc(p/3)
+p.raiz = trunc(sqrt(p))
+
+set.seed(100)
+train = sample(nrow(Boston), nrow(Boston)/2)
+X.train = Boston[train, -14]
+X.test = Boston[-train, -14]
+Y.train = Boston[train, 14]
+Y.test = Boston[-train, 14]
+
+rforest.p = randomForest(X.train, Y.train, xtest = X.test, ytest = Y.test, 
+    mtry = p, ntree = 500)
+
+rforest.p2 = randomForest(X.train, Y.train, xtest = X.test, ytest = Y.test, 
+    mtry = p.2, ntree = 500)
+
+rforest.p3 = randomForest(X.train, Y.train, xtest = X.test, ytest = Y.test, 
+    mtry = p.3, ntree = 500)
+
+rforest.praiz = randomForest(X.train, Y.train, xtest = X.test, ytest = Y.test, 
+    mtry = p.raiz, ntree = 500)
+
+plot(1:500, rforest.p$test$mse, col = "chartreuse1", type = "l", xlab = "NÚMERO DE ARBOLES", 
+    ylab = "MSE DE PRUEBA", ylim = c(10, 18))
+lines(1:500, rforest.p2$test$mse, col = "turquoise1", type = "l")
+lines(1:500, rforest.p3$test$mse, col = "firebrick2", type = "l")
+lines(1:500, rforest.praiz$test$mse, col = "royalblue1", type = "l")
+
+legend("bottomright", c("m=p", "m=p/2", "m=p/3", "m=raiz(p)"), col = c("chartreuse1", "turquoise1",    "firebrick2", "royalblue1"),cex = 1, lty = 1)
+```
+
+<span class="negrita_verde">Para los valores de mtry se usaron además de p=13, valores recomendables de p, como p/2=6, p/3=4 y raiz(p)=3. En principio, con un solo arbol el MSE es demasiado alto, luego con alrededor de 200 arboles el MSE se estabiliza para todos los diferentes valores de predictores, en particular para p/2, p/3 y raiz(p) el error se estabiliza alrededor de 14, siendo menor siempre para m=p/2=6. Por tanto unos buenos valores para mtry y ntree serian mtry=6 y ntree=200.
+</span>
+
+## <span class="titulo_ejercicio">Ejercicio 8</span> {.letra}
+
+In the lab, a classification tree was applied to the Carseats data set after converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Split the data set into a training set and a test set.
+
+```{r, message=FALSE}
+library(ISLR)
+attach(Carseats)
+set.seed(100)
+train = sample(nrow(Carseats), nrow(Carseats)/2)
+Carseats.train = Carseats[train, ]
+Carseats.test = Carseats[-train, ]
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Fit a regression tree to the training set. Plot the tree, and interpret the results. What test MSE do you obtain?
+
+```{r, warning=FALSE, message=FALSE}
+library(tree)
+tree.carseats = tree(Sales ~ ., data = Carseats.train,  split = "deviance")
+summary(tree.carseats)
+#tree.carseats
+```
+
+```{r, warning=FALSE, message=FALSE}
+plot(x = tree.carseats, type = "proportional")
+text(x = tree.carseats, splits = TRUE, pretty = 0,cex = 0.5, col = "forestgreen")
+```
+
+```{r}
+carseats.predict = predict(tree.carseats, newdata = Carseats.test)
+mean((carseats.predict - Carseats.test$Sales)^2)
+```
+
+<span class="negrita_verde"> Analizando la representación del árbol, el predictor más influyente sobre las ventas es el lugar que ocupa el producto en los estantes de las tiendas (ShelveLoc). Este hecho queda reflejado en la primera división del árbol, que separa las posiciones buenas (nodo derecho) de las malas e intermedias (nodo izquierdo).El total de nodos terminales es de 17 y el MSE de error es de alrededor de 5.4 
+</span> 
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test MSE?
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+cv.carseats = cv.tree(tree.carseats, FUN = prune.tree)
+
+resultados.cv = data.frame(nro.nodos = cv.carseats$size, desviacion = cv.carseats$dev,
+                            k = cv.carseats$k)
+
+p1 = ggplot(data = resultados.cv, aes(x = nro.nodos, y = desviacion)) +
+      geom_line() + geom_point() + labs(title = "Error vs tamaño del árbol") + theme_bw() 
+
+p2 = ggplot(data = resultados.cv, aes(x = k, y = desviacion)) +
+      geom_line() + geom_point() + labs(title = "Error vs parametro K") + theme_bw() 
+
+ggarrange(p1, p2)
+```
+
+```{r}
+carseats.pruning = prune.tree(tree.carseats, best = 8)
+plot(x = carseats.pruning, type = "proportional")
+text(x = carseats.pruning, splits = TRUE, pretty = 0, cex = 0.8, col = "forestgreen")
+```
+
+```{r}
+carseats.pruning.predict = predict(carseats.pruning, Carseats.test)
+round(mean((Carseats.test$Sales - carseats.pruning.predict)^2),2)
+```
+
+<span class="negrita_verde">Haciendo el analisis tanto del Error vs el numero de nodos terminales como del Error vs el valor de k, se encuentra que el  numero de nodos que minimiza el error es de 8. Efectivamente el error medio de prueba de este nuevo arbol con 8 nodos finales es de 5.33
+</span> 
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Use the bagging approach in order to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important.
+
+```{r, warning=FALSE, message=FALSE}
+library(randomForest)
+library(tidyverse)
+
+carseats.bagg = randomForest(Sales ~ ., data = Carseats.train, mtry = 10, ntree = 500,importance = T)
+#carseats.bagg
+prediccion = predict(carseats.bagg, newdata = Carseats.test)
+error = round(mean((Carseats.test$Sales - prediccion)^2),2)
+paste("el Error de test (mse) del modelo obtenido por bagging es:", error)
+
+importancia_pred <- as.data.frame(importance(carseats.bagg, scale = TRUE))
+importancia_pred <- rownames_to_column(importancia_pred, var = "variable")
+
+
+p1 <- ggplot(data = importancia_pred, aes(x = reorder(variable, `%IncMSE`), y = `%IncMSE`, fill = `%IncMSE`)) +
+    labs(x = "variable", title = "Reducción de MSE") +
+    geom_col() +
+    coord_flip() +
+    theme_bw() +
+    theme(legend.position = "bottom")
+
+p2 <- ggplot(data = importancia_pred, aes(x = reorder(variable, IncNodePurity), y = IncNodePurity,
+                                          fill = IncNodePurity)) +
+    labs(x = "variable", title = "Reducción de pureza") +
+    geom_col() +
+    coord_flip() +
+    theme_bw() +
+    theme(legend.position = "bottom")
+ggarrange(p1, p2)
+```
+
+```{r, warning=FALSE, message=FALSE}
+
+
+```
+<span class="negrita_verde">Usando un modelo de Bagging se tiene un MSE de prueba de 3.28.  
+Según las dos graficas de importancia, hay dos variables con un alta importancia sobre el modelo con respecto a las otras, estas dos variables en nivel de importancia son respectivamente **ShelveLoc** y **Price**.
+</span>
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Use random forests to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables aremost important. Describe the effect of m, the number of variables considered at each split, on the error rate obtained.
+
+```{r}
+#Random Forest variando los predictores
+max.predictores = ncol(Carseats)-1
+nro.predictores = rep(NA, max.predictores)
+test.error =  rep(NA, max.predictores)
+
+for(i in 1:10){
+  carseats.rf = randomForest(Sales ~ ., data = Carseats.train, mtry = i, ntree = 500, importance = T)
+  prediccion = predict(carseats.rf, Carseats.test)
+  nro.predictores[i] = i
+  test.error[i] = round(mean((Carseats.test$Sales - prediccion)^2),2)
+  #error = round(mean((Carseats.test$Sales - prediccion)^2),2)
+  #mensaje = paste("Error de prueba con ", i, " predictores = ", error)
+  #print(mensaje)
+}
+
+result.modelos = data.frame(nro.predictores, test.error)
+
+ggplot(data = result.modelos, aes(x = nro.predictores, y = test.error)) +
+  scale_x_continuous(breaks = result.modelos$nro.predictores) +
+  geom_line() + geom_point() + 
+  geom_point(data = result.modelos %>% arrange(test.error) %>% head(1), color = "red") +
+  labs(title = "Evolución del error de predicion de prueba vs mtry",x = "nº predictores empleados", y = "Error de prueba")+   theme_bw()
+```
+
+<span class="negrita_verde">Variando el valor del numero de predictores m desde 1 hasta 10, el error de prueba disminuye significativamente hasta m=5, de ahi en adelante no se presentan grandes disminuciones, tanto así que cada vez que se corre el algoritmo se obtiene un valor diferente de m entre 5 y 9 que minimiza el error, es decir, a veces el minimo es 5, otras es 6, otras 7, otras 8 y otras incluso es 9, esto se explica gracias a que en cada corrida el algorimto usa combinaciones de predictores diferentes.
+Un buen valor para usar en nuestro modelo de Random Forest podria ser entonces m = 6.
+</span> 
+
+```{r}
+carseats.r6 = randomForest(Sales ~ ., data = Carseats.train, mtry = 6, ntree = 500, importance = T)
+prediccion = predict(carseats.r6, Carseats.test)
+error = round(mean((Carseats.test$Sales - prediccion)^2),2)
+paste("Error de prueba con 6 predictores = ", error)
+
+importancia_pred <- as.data.frame(importance(carseats.r6, scale = TRUE))
+importancia_pred <- rownames_to_column(importancia_pred, var = "variable")
+
+p1 <- ggplot(data = importancia_pred, aes(x = reorder(variable, `%IncMSE`), y = `%IncMSE`, fill = `%IncMSE`)) +
+    labs(x = "variable", title = "Reducción de MSE") +
+    geom_col() +
+    coord_flip() +
+    theme_bw() +
+    theme(legend.position = "bottom")
+
+p2 <- ggplot(data = importancia_pred, aes(x = reorder(variable, IncNodePurity), y = IncNodePurity,
+                                          fill = IncNodePurity)) +
+    labs(x = "variable", title = "Reducción de pureza") +
+    geom_col() +
+    coord_flip() +
+    theme_bw() +
+    theme(legend.position = "bottom")
+ggarrange(p1, p2)
+```
+
+<span class="negrita_verde"> Nuevamente las variables mas importantes en nuestro modelo son **ShelveLoc** y **Price** respectivamente.
+</span>
+
+## <span class="titulo_ejercicio">Ejercicio 9</span> {.letra}
+
+This problem involves the OJ data set which is part of the ISLR package.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Create a training set containing a random sample of 800 observations, and a test set containing the remaining observations.
+
+```{r, warning=FALSE}
+library(ISLR)
+library(tree)
+attach(OJ)
+
+#str(OJ)
+#summary(OJ)
+#rbind(head(OJ,5),tail(OJ,5))
+
+set.seed(1000)
+train = sample(nrow(OJ), 800)
+OJ.train = OJ[train, ]
+OJ.test = OJ[-train, ]
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Fit a tree to the training data, with Purchase as the response and the other variables as predictors. Use the summary() function to produce summary statistics about the tree, and describe the results obtained. What is the training error rate? How many terminal nodes does the tree have?
+
+```{r}
+arbol.oj = tree(Purchase ~ ., data = OJ.train)
+summary(arbol.oj)
+```
+
+<span class="negrita_verde">Se creó un arbol de clasificación con un total de 8 nodos terminales y una tasa de error de clasificación del 16%. Siendo los predictores más importantes la lealtad de marca del consumidor al producto CH **(LoyalCH)**; el precio de venta de MM menos precio de venta de CH **(PriceDiff)** y el precio de venta para MM **(SalePriceMM)**.
+</span> 
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Type in the name of the tree object in order to get a detailed text output. Pick one of the terminal nodes, and interpret the information displayed.
+
+```{r}
+#arbol.oj
+```
+
+<span class="negrita_verde">Analizando el nodo numero 25 vemos que allí la variable decisoria es **PriceDiff** que es la diferencia entre el precio de venta del jugo de naranja Minute Maid (MM) y el precio  de venta del jugo de naranja Citrus Hill (CH). En este nodo caen todas las observacions cuyo PriceDiff sea mayor a -0.35 que son en total 104 observaciones. El error de desviacion de todas las observaciones de este nodo es de 126.70 y la prediccion es que el cliente compró Citrus Hill (CH), siendo esta la clase mayoritaria con un total del 70% de las observaciones, mientras que el restante 30% corresponde a la clase Minute Maid (MM).
+</span> 
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Create a plot of the tree, and interpret the results.
+
+```{r}
+plot(arbol.oj, type = "proportional")
+text(arbol.oj, splits = TRUE, pretty = 0, cex = 0.8, col = "springgreen4")
+```
+
+<span class="negrita_verde">Se puede ver como la variable que más peso tiene en el árbol de decisión es **LoyalCH**. Ya que esta variable es el decisor de los nodos más internos, incluso da una clara clasificación para valores extremos: Si **LoyalCH < 0.27** la clasificación es indiscutiblemente **MM** y si **LoyalCH > 0.76** entonces la clasificación es **CH**. Para valores de **LoyalCH** entre **[0.27 ; 0.76]** la decisión ya depende también de *SalePriceMM* y de *PriceDiff*.
+</span> 
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Predict the response on the test data, and produce a confusion matrix comparing the test labels to the predicted test labels. What is the test error rate?
+
+```{r}
+library("caret")
+predicc.oj = predict(arbol.oj, OJ.test, type = "class")
+confusionMatrix(predicc.oj, OJ.test$Purchase)
+```
+<span class="negrita_verde">Según la matriz de confusión el porcentaje de precisión es del 81.8% por lo que la tasa del error de prueba es del 18.2%
+</span>
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Apply the cv.tree() function to the training set in order to determine the optimal tree size.
+
+```{r}
+set.seed(356)
+cv.arbol.oj = cv.tree(arbol.oj, FUN = prune.misclass)
+```
+
+### <span class="negrita_azul">(g)</span> {.letra}
+Produce a plot with tree size on the x-axis and cross-validated classification error rate on the y-axis.
+
+```{r}
+plot(cv.arbol.oj$size, cv.arbol.oj$dev, xlab = "Nro de nodos terminales", 
+     ylab = "Error de clasificación", type = "b", pch = 19)
+```
+
+### <span class="negrita_azul">(h)</span> {.letra}
+Which tree size corresponds to the lowest cross-validated classification error rate?
+
+<span class="negrita_verde">A partir del grafico se ve que el número de nodos que minimiza el error de clasificación para el árbol es de 6.
+</span>
+
+### <span class="negrita_azul">(i)</span> {.letra}
+Produce a pruned tree corresponding to the optimal tree size obtained using cross-validation. If cross-validation does not lead to selection of a pruned tree, then create a pruned tree with five terminal nodes.
+
+```{r}
+arbol.podado.oj = prune.tree(arbol.oj, best = 6)
+plot(arbol.podado.oj, type = "proportional")
+text(arbol.podado.oj, splits = TRUE, pretty = 0, cex = 0.8, col = "springgreen4")
+```
+
+
+### <span class="negrita_azul">(j)</span> {.letra}
+Compare the training error rates between the pruned and unpruned trees. Which is higher?
+
+```{r}
+summary(arbol.oj)
+
+summary(arbol.podado.oj)
+```
+
+<span class="negrita_verde">La tasa de clasificación errónea del árbol podado es un 1% mayor que la del árbol original, la tasa del original es del 16% mientras que la del árbol podado es del 17%. El error de  desviación media también es menor en el árbol original es de 0.7486 mientras que la del árbol podado es de 0.7773.
+</span> 
+
+### <span class="negrita_azul">(k)</span> {.letra}
+Compare the test error rates between the pruned and unpruned trees. Which is higher?
+
+```{r}
+predicc.arbol.oj = predict(arbol.oj, newdata = OJ.test, type = "class")
+erroneos.sinpodar = sum(OJ.test$Purchase != predicc.arbol.oj)
+round(erroneos.sinpodar/length(predicc.arbol.oj),2)
+
+predicc.arbol.podado.oj = predict(arbol.podado.oj, newdata = OJ.test, type = "class")
+erroneos.podado = sum(OJ.test$Purchase != predicc.arbol.podado.oj)
+round(erroneos.podado/length(predicc.arbol.podado.oj),2)
+```
+
+<span class="negrita_verde">La tasa de error de clasificacion del árbol podado (20%) es mayor que la del árbol sin podar (18%)
+</span> 
+
+## <span class="titulo_ejercicio">Ejercicio 10</span> {.letra}
+
+We now use boosting to predict Salary in the Hitters data set.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+
+```{r, warning=FALSE, message=FALSE}
+library(ISLR)
+sum(is.na(Hitters$Salary))
+```
+
+```{r}
+Hitters = Hitters[-which(is.na(Hitters$Salary)), ]
+sum(is.na(Hitters$Salary))
+```
+
+```{r}
+Hitters$Salary = log(Hitters$Salary)
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Create a training set consisting of the first 200 observations, and a test set consisting of the remaining observations.
+
+```{r}
+train = 1:200
+Hitters.train = Hitters[train, ]
+Hitters.test = Hitters[-train, ]
+```
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Perform boosting on the training set with 1,000 trees for a range of values of the shrinkage parameter λ. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+
+
+```{r, warning=FALSE, message=FALSE}
+library(gbm)
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(103)
+learning.rate = 10 ^ seq(-10, -0.1, by = 0.1)
+#plot(seq(-10, -0.1, by = 0.1),learning.rate, type = "l")
+
+learning.rate.length = length(learning.rate)
+train.errors = rep(NA, learning.rate.length)
+test.errors = rep(NA, learning.rate.length)
+
+for (i in 1:learning.rate.length) {
+    hitters.boosting = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+                            n.trees = 1000, shrinkage = learning.rate[i])
+    
+    train.pred = predict(hitters.boosting, Hitters.train, n.trees = 1000)
+    test.pred = predict(hitters.boosting, Hitters.test, n.trees = 1000)
+    
+    train.errors[i] = mean((Hitters.train$Salary - train.pred)^2)
+    test.errors[i] = mean((Hitters.test$Salary - test.pred)^2)
+}
+
+plot(learning.rate, train.errors, type = "b", xlab = "Tasa de aprendizaje", ylab = "MSE de entrenamiento", 
+    col = "chocolate3", pch = 20)
+```
+
+```{r}
+min(train.errors)
+which.min(train.errors)
+learning.rate[which.min(train.errors)]
+```
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis.
+
+```{r}
+plot(learning.rate, test.errors, type = "b", xlab = "Tasa de aprendizaje", ylab = "MSE de prueba", 
+    col = "cyan4", pch = 20)
+```
+
+```{r}
+min.test.error = round(min(test.errors),5)
+paste("EL minimo error de prueba es: ", min.test.error)
+min.learning.rate = round(learning.rate[which.min(test.errors)],5)
+paste("La tasa de aprendizaje que da un minimo error de prueba es de :", min.learning.rate)
+
+```
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Compare the test MSE of boosting to the test MSE that results from applying two of the regression approaches seen in Chapters 3 and 6.
+
+```{r, warning=FALSE, message=FALSE}
+library(glmnet)
+#Usando regresion lineal multiple
+lm.fit = lm(Salary ~ ., data = Hitters.train)
+lm.pred = predict(lm.fit, Hitters.test)
+mse = round(mean((Hitters.test$Salary - lm.pred)^2),5)
+paste("el MSE usando un modelo de regresion lineal es de: ", mse)
+
+#Usando Ridge Regression y Lasso
+set.seed(134)
+x = model.matrix(Salary ~ ., data = Hitters.train)
+y = Hitters.train$Salary
+x.test = model.matrix(Salary ~ ., data = Hitters.test)
+
+#Ridge Regression
+ridge.fit = glmnet(x, y, alpha = 0)
+ridge.pred = predict(ridge.fit, s = 0.01, newx = x.test)
+mse = round(mean((Hitters.test$Salary - ridge.pred)^2),5)
+paste("el MSE usando un modelo Ridge Regression es de: ", mse)
+
+#Lasso
+lasso.fit = glmnet(x, y, alpha = 1)
+lasso.pred = predict(lasso.fit, s = 0.01, newx = x.test)
+mse = round(mean((Hitters.test$Salary - lasso.pred)^2),5)
+paste("el MSE usando un modelo Lasso es de: ", mse)
+```
+
+<span class="negrita_verde">Se observa como el MSE es mucho mayor para modelos de Regresion Lineal, Ridge Regression y Lasso en comparacion con el modelo de Boosting.
+</span>
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Which variables appear to be the most important predictors in the boosted model?
+
+```{r}
+mejor.boost = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+                  n.trees = 1000, shrinkage = learning.rate[which.min(test.errors)])
+summary(mejor.boost)
+```
+
+<span class="negrita_verde">Las 5 variables de mayor importancia en el modelo son según su importancia: ***CAtBat***, ***CWalks***, ***CHits***, ***PutOuts***, ***Years***.
+</span>
+
+### <span class="negrita_azul">(g)</span> {.letra}
+Now apply bagging to the training set. What is the test set MSE for this approach?
+
+```{r, warning=FALSE, message=FALSE}
+library(randomForest)
+set.seed(21)
+rf.hitters = randomForest(Salary ~ ., data = Hitters.train, ntree = 500, mtry = 19)
+rf.pred = predict(rf.hitters, Hitters.test)
+error = round(mean((Hitters.test$Salary - rf.pred)^2),5)
+paste("EL MSE de prueba para el modelo bagging es de: ", error)
+```
+
+
+## <span class="titulo_ejercicio">Ejercicio 11</span> {.letra}
+
+This question uses the Caravan data set.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Create a training set consisting of the first 1,000 observations, and a test set consisting of the remaining observations.
+
+```{r, warning=FALSE}
+library(ISLR)
+library(gbm)
+library(class)
+#str(Caravan)
+#rbind(head(Caravan,5),tail(Caravan,5))
+
+train = 1:1000
+Caravan$Purchase = ifelse(Caravan$Purchase == "Yes", 1, 0)
+Caravan.train = Caravan[train, ]
+Caravan.test = Caravan[-train, ]
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Fit a boosting model to the training set with Purchase as the response and the other variables as predictors. Use 1,000 trees, and a shrinkage value of 0.01. Which predictors appear to be the most important?
+
+
+```{r, warning=FALSE}
+set.seed(400)
+boost.caravan = gbm(Purchase ~ ., data = Caravan.train, n.trees = 1000, shrinkage = 0.01, 
+                    distribution = "bernoulli")
+
+summary(boost.caravan)
+```
+
+<span class="negrita_verde">Ordenadas segun su importancia las 5 variables mas importantes del modelo son respectivamente: **PPERSAUT**, **MKOOPKLA**, **MBERMIDD**, **MOPLHOOG**, **PBRAND**.
+</span>
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Use the boosting model to predict the response on the test data. Predict that a person will make a purchase if the estimated probability of purchase is greater than 20 %. Form a confusion matrix. What fraction of the people predicted to make a purchase do in fact make one? How does this compare with the results obtained from applying KNN or logistic regression to this data set?
+
+```{r}
+boost.prob = predict(boost.caravan, Caravan.test, n.trees = 1000, type = "response")
+boost.pred = ifelse(boost.prob > 0.2, 1, 0)
+matrix.conf = table(Caravan.test$Purchase, boost.pred)
+verdadero.compr = round(matrix.conf[2,2]/sum(matrix.conf[,2]),2)
+
+paste("La fraccion de personas que el modelo predijo como compradores y que efectuaron una compra es de:", verdadero.compr)
+```
+
+```{r, warning=FALSE}
+#Usando Regresión Logistica.
+lm.caravan = glm(Purchase ~ ., data = Caravan.train, family = binomial)
+lm.prob = predict(lm.caravan, Caravan.test, type = "response")
+lm.pred = ifelse(lm.prob > 0.2, 1, 0)
+
+matrix.conf = table(Valor_real = Caravan.test$Purchase, Prediccion = lm.pred)
+verdadero.compr = round(matrix.conf[2,2]/sum(matrix.conf[,2]),2)
+matrix.conf
+verdadero.compr
+paste("La fraccion usando Regresión Logistica es:", verdadero.compr)
+```
+
+```{r, warning=FALSE}
+#Usando KNN.
+nros.k = 1:10
+v.fracc = rep(NA,length(nros.k))
+
+for(i in 1:length(nros.k)){
+  Knn.predicc = knn(Caravan.train[,1:85], Caravan.test[,1:85], Caravan.train$Purchase, k = i, prob = TRUE )
+  matrix.conf = table(Caravan.test$Purchase, Knn.predicc)
+  verdadero.compr = round(matrix.conf[2,2]/sum(matrix.conf[,2]),4)
+  v.fracc[i] = verdadero.compr
+  Knn.predicc = NULL
+}
+paste("K =", nros.k, "fr =", v.fracc)
+```
+
+<span class="negrita_verde">Tanto para la regresión logistica como para KNN con diferentes valores para K la proporcion de verdaderos compradores es menor que la que se obtiene usando el metodo de boosting la cual es del **23%**. Aunque con un valor de K = 9 para KNN se acercan bastante.
+</span>
+
+## <span class="titulo_ejercicio">Ejercicio 12</span> {.letra}
+
+Apply boosting, bagging, and random forests to a data set of your choice. Be sure to fit the models on a training set and to evaluate their performance on a test set. How accurate are the results compared to simple methods like linear or logistic regression? Which of these approaches yields the best performance?
+
+<span class="negrita_verde">Para este ejercicio se hará uso del conjunto de datos College de la librería ISLR el cual registra datos en 18 variables de 777 universidades de los estados unidos. La primera de estas variables indica si la universidad es privada o no es privada. Se crearán entonces diferentes modelos de clasificación que permitirán predecir si una universidad es privada o no en función de las otras 17 variables y se evaluarán los rendimientos de estos modelos.
+</span>
+
+```{r, warning=FALSE}
+library(ISLR)
+library(gbm)
+library(randomForest)
+library(tidyverse)
+#summary(College)
+#str(OJ)
+set.seed(100)
+train = sample(nrow(College), 0.7* nrow(College))
+train.college = College[train,]
+test.college = College[-train,]
+```
+
+<span class="negrita_verde">MODELO DE REGRESIÓN LOGISTICA</span>
+
+```{r}
+#Probabilidades <= 0.5 corresponderan a universidades no privadas y > 0.5 a universidades privadas
+glm.fit = glm(Private ~ ., data = train.college, family = "binomial")
+glm.probs = predict(glm.fit, newdata = test.college, type = "response")
+glm.pred = rep("No", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Yes"
+
+table(Prediccion = glm.pred, Valor_real = test.college$Private[])
+porc.acierto = round(mean(glm.pred == test.college$Private)*100,2)
+paste("Rendimiento usando Regresion Logistica =", porc.acierto, "%")
+```
+
+<span class="negrita_verde">MODELO USANDO BOOSTING</span>
+
+```{r}
+#Se crea una nueva variable binaria en función de la variable Private. Para poder usar la distribucion bernoulli en el parametro distribution
+College$Private01 = ifelse(College$Private == "Yes", 1, 0)
+
+college.boost = gbm(Private01 ~ ., data = College[train,-1], distribution = "bernoulli", n.trees = 5000) 
+college.probs = predict(college.boost, newdata = College[-train,-1], n.trees = 5000)
+college.predic = rep(0, length(college.probs))
+college.predic[college.probs > 0.5] = 1
+
+table(Prediccion = college.predic, Valor_real = College$Private01[-train])
+porc.acierto = round(mean(college.predic == College$Private01[-train])*100,2)
+paste("Rendimiento usando Bossting =", porc.acierto, "%")
+
+College = College[,-19]
+```
+
+<span class="negrita_verde">MODELO USANDO BAGGING</span>
+
+```{r}
+college.bagg = randomForest(Private ~ ., data = train.college, mtry = 17)
+college.bagg.pred = predict(college.bagg, newdata = test.college)
+
+table(Prediccion = college.bagg.pred, Valor_real = test.college$Private)
+porc.acierto = round(mean(college.bagg.pred == test.college$Private)*100,2)
+paste("Rendimiento usando Bossting =", porc.acierto, "%")
+```
+
+<span class="negrita_verde">MODELO USANDO RANDOM FOREST</span>
+
+```{r}
+college.rf = randomForest(Private ~ ., data = train.college, mtry = 10)
+college.rf.pred = predict(college.rf, newdata = test.college)
+
+table(Prediccion = college.rf.pred, test.college$Private)
+porc.acierto = round(mean(college.rf.pred == test.college$Private)*100,2)
+paste("Rendimiento usando Bossting =", porc.acierto, "%")
+```
+
+<span class="negrita_verde">Los metodos con mejor resultado fueron los de **Bagging** y **RandomForest**. Ambos tienen un porcentaje de acierto mayor que el de la Regresion Logistica y el del metodo de Boosting. 
+</span>
+
+# <span class="titulo_capitulo">Capítulo 9.7</span> {#cap9_7}
+
+## <span class="titulo_ejercicio">Ejercicio 4</span> {.letra}
+
+Generate a simulated two-class data set with 100 observations and two features in which there is a visible but non-linear separation between the two classes. Show that in this setting, a support vector machine with a polynomial kernel (with degree greater than 1) or a radial kernel will outperform a support vector classifier on the training data. Which technique performs best on the test data? Make
+plots and report training and test error rates in order to back up your assertions.
+
+```{r, warning=FALSE}
+library(e1071)
+#Se crean los datos X y Y aleatorios
+set.seed(200)
+x = rnorm(100)
+y = 4* -x^2 + 2 + rnorm(100)
+#60% serán de la clase +1 y 40% de la clase -1
+clasepos = sample(100, 60)
+y[clasepos] = y[clasepos] +4
+y[-clasepos] = y[-clasepos] -1
+z = rep(-1, 100)
+z[clasepos] = 1
+
+plot(y[clasepos],x[clasepos], pch="x", lwd=4, col="darkturquoise", xlim=c(-15, 10), xlab="Y", ylab="X")
+points(y[-clasepos], x[-clasepos], pch="o", lwd=4, col="darkorchid1")
+```
+
+```{r, warning=FALSE, message=FALSE}
+#Se crean las variables respuestas -1 y +1
+set.seed(300)
+datos = data.frame(x,y,z = as.factor(z))
+#70% de los datos se usarán para entreno y 30% para prueba
+train = sample(100, 70)
+datos.train = datos[train,]
+datos.test = datos[-train,]
+
+#verifivar distribucion de las clases en los datos de entreno y de prueba
+table(datos.train[,3])
+table(datos.test[,3])
+
+prop.table(table(datos.train[,3]))
+prop.table(table(datos.test[,3]))
+```
+
+<span class="negrita_verde">KERNEL LINEAL</span>
+
+```{r}
+svm.linear = svm(z~., data=datos.train, kernel="linear", cost=10)
+plot(svm.linear, datos.train)
+```
+
+```{r}
+prediccion = predict(svm.linear, datos.train)
+table(prediccion , real = datos.train$z)
+train.error = round(mean(prediccion != datos.train$z)*100,3)
+
+paste("Para un Kernel Lineal el train error es del", train.error, "%")
+```
+
+```{r}
+set.seed(500)
+svm.poly = svm(z~., data=datos.train, kernel="polynomial", cost=10, degree=11)
+plot(svm.poly, datos.train)
+```
+
+```{r}
+prediccion = predict(svm.poly, datos.train)
+table(prediccion , real = datos.train$z)
+train.error = round(mean(prediccion != datos.train$z)*100,3)
+
+paste("Para un Kernel Polinomial de grado 11 el train error es del", train.error, "%")
+```
+
+```{r}
+set.seed(600)
+svm.radial = svm(z~., data=datos.train, kernel="radial", gamma=1, cost=10)
+plot(svm.radial, datos.train)
+```
+
+```{r}
+prediccion = predict(svm.radial, datos.train)
+table(prediccion , real = datos.train$z)
+train.error = round(mean(prediccion != datos.train$z)*100,3)
+
+paste("Para un Kernel Radial el train error es del", train.error, "%")
+```
+
+```{r}
+plot(svm.linear, datos.test)
+```
+
+```{r}
+prediccion = predict(svm.linear, datos.test)
+table(prediccion , real = datos.test$z)
+test.error = round(mean(prediccion != datos.test$z)*100,3)
+
+paste("Para un Kernel Lineal el test error es del", test.error, "%")
+```
+
+```{r}
+plot(svm.poly, datos.test)
+```
+
+```{r}
+prediccion = predict(svm.poly, datos.test)
+table(prediccion , real = datos.test$z)
+test.error = round(mean(prediccion != datos.test$z)*100,3)
+
+paste("Para un Kernel Polinomial el test error es del", test.error, "%")
+```
+
+```{r}
+plot(svm.radial, datos.test)
+```
+
+```{r}
+prediccion = predict(svm.radial, datos.test)
+table(prediccion , real = datos.test$z)
+test.error = round(mean(prediccion != datos.test$z)*100,3)
+
+paste("Para un Kernel Radial el test error es del", test.error, "%")
+```
+
+<span class="negrita_verde">El mejor modelo de SVM para este conjunto de datos es el que se basa en un **kernel radial.** Para los datos de entrenamiento tiene un error del **0%** mientras que para los datos de prueba su test error es de tan solo el **3.3%** ya que solo clasifica mal una sola observación. El modelo de SVM con kernel lineal presenta mejor rendimiento con respecto al kernel polinomial, ya que este ultimo no se ajusta muy bien a los datos aun cuando se usa un alto grado para el polinomio.
+</span>
+
+## <span class="titulo_ejercicio">Ejercicio 5</span> {.letra}
+
+We have seen that we can fit an SVM with a non-linear kernel in order to perform classification using a non-linear decision boundary.We will now see that we can also obtain a non-linear decision boundary by performing logistic regression using non-linear transformations of the features.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Generate a data set with n = 500 and p = 2, such that the observations belong to two classes with a quadratic decision boundary between them. For instance, you can do this as follows:
+> x1=runif (500) -0.5
+> x2=runif (500) -0.5
+> y=1*( x1^2-x2^2 > 0)
+
+```{r}
+set.seed(700)
+x1 = runif(500) - 0.5
+x2 = runif(500) - 0.5
+y = 1*(x1^2 - x2^2 > 0)
+```
+
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Plot the observations, colored according to their class labels. Your plot should display X1 on the x-axis, and X2 on the yaxis.
+
+```{r}
+plot(x1[y == 1], x2[y == 1], col = "dodgerblue1", xlab = "X1", ylab = "X2", pch = 4)
+points(x1[y == 0], x2[y == 0], col = "khaki3", pch = 19)
+```
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Fit a logistic regression model to the data, using X1 and X2 as predictors.
+
+```{r}
+datos = data.frame(x1 = x1, x2 = x2, y = y)
+lg.fit = glm(y ~ ., data = datos, family = binomial)
+summary(lg.fit)
+```
+
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. The decision boundary should be linear.
+
+```{r}
+lg.probs = predict(lg.fit, newdata = datos, type = "response")
+lg.pred = ifelse(lg.probs > 0.5, 1, 0)
+datos.pos = datos[lg.pred == 1, ]
+datos.neg = datos[lg.pred == 0, ]
+plot(datos.pos$x1, datos.pos$x2, col = "dodgerblue1", xlab = "X1", ylab = "X2", pch = 4)
+points(datos.neg$x1, datos.neg$x2, col = "khaki3", pch = 19)
+```
+
+<span class="negrita_verde">Con este modelo de regresión logística se ve una clara diferenciación entre las dos clases. Dicha diferenciación puede hacerse imaginando una línea recta que separe los colores, por lo tanto se puede hablar de un límite línea para este conjunto de datos.
+</span>
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Now fit a logistic regression model to the data using non-linear functions of X1 and X2 as predictors (e.g. X21 , X1×X2, log(X2), and so forth).
+
+```{r, warning=FALSE}
+lg.nolineal.fit = glm(y ~ poly(x1, 3) + poly(x2, 4) + I(x1*x2) , data = datos, family = binomial)
+summary(lg.nolineal.fit)
+```
+
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. The decision boundary should be obviously non-linear. If it is not, then repeat (a)-(e) until you come up with an example in which the predicted class labels are obviously non-linear.
+
+```{r}
+lg.nolineal.probs = predict(lg.nolineal.fit, datos, type = "response")
+lg.nolineal.pred = ifelse(lg.nolineal.probs > 0.5, 1, 0)
+datos.pos = datos[lg.nolineal.pred == 1, ]
+datos.neg = datos[lg.nolineal.pred == 0, ]
+plot(datos.pos$x1, datos.pos$x2, col = "dodgerblue1", xlab = "X1", ylab = "X2", pch = 4)
+points(datos.neg$x1, datos.neg$x2, col = "khaki3", pch = 19)
+```
+
+<span class="negrita_verde">Con este nuevo modelo de regresión logística no lineal ya no podemos hablar de un límite lineal, porque no se puede imaginar una línea recta que haga una división completa de las dos clases, por tanto se habla de un límite no lineal.
+</span>
+
+### <span class="negrita_azul">(g)</span> {.letra}
+Fit a support vector classifier to the data with X1 and X2 as predictors. Obtain a class prediction for each training observation. Plot the observations, colored according to the predicted class labels.
+
+```{r, warning=FALSE}
+library(e1071)
+svm.fit = svm(as.factor(y) ~ ., data = datos, kernel = "linear", cost = 1)
+svm.pred = predict(svm.fit, datos)
+datos.pos = datos[svm.pred == 1, ]
+datos.neg = datos[svm.pred == 0, ]
+plot(datos.pos$x1, datos.pos$x2, col = "dodgerblue1", xlab = "X1", ylab = "X2", pch = 4)
+points(datos.pos$x1, datos.pos$x2, col = "khaki3", pch = 19)
+```
+
+<span class="negrita_verde">El modelo SVM de núcleo lineal no es capaz de identificar claramente los limites entre una y otra clase por eso no predice bien las observaciones, al no conocer los limites lo que hace es clasificar todas las observaciones con la misma etiqueta.
+</span>
+
+### <span class="negrita_azul">(h)</span> {.letra}
+Fit a SVM using a non-linear kernel to the data. Obtain a class prediction for each training observation. Plot the observations, colored according to the predicted class labels.
+
+```{r}
+svm.fit = svm(as.factor(y) ~ ., datos, gamma = 1)
+svm.pred = predict(svm.fit, datos)
+datos.pos = datos[svm.pred == 1, ]
+datos.neg = datos[svm.pred == 0, ]
+plot(datos.pos$x1, datos.pos$x2, col = "dodgerblue1", xlab = "X1", ylab = "X2", pch = 4)
+points(datos.neg$x1, datos.neg$x2, col = "khaki3", pch = 19)
+```
+
+<span class="negrita_verde">Este modelo SVM con el núcleo no lineal sí es capaz de identificar la no linealidad entre las clases, lo que significa que hace una clara clasificación de las diferentes clases a pesar de que no haya una separación lineal entre ellas.
+</span>
+
+### <span class="negrita_azul">(i)</span> {.letra}
+Comment on your results.
+
+<span class="negrita_verde">Efectivamente una regresión logística lineal o un SVM de kernel lineal presentan grandes problemas a la hora de clasificar datos que presentan relaciones no lineales. En cambio, una regresión logística de parámetros no lineales y un kernel radial si permiten clasificar muy bien este tipo de datos. Pero entre estos dos últimos métodos el que brinda mejores resultados y es mucho más fácil de manipular es el de SVM con kernel no lineal, ya que solo depende de un buen ajuste para el parámetro gamma.
+</span>
+    
+## <span class="titulo_ejercicio">Ejercicio 6</span> {.letra}
+
+At the end of Section 9.6.1, it is claimed that in the case of data that is just barely linearly separable, a support vector classifier with a small value of cost that misclassifies a couple of training observations may perform better on test data than one with a huge value of cost that does not misclassify any training observations. You will now investigate this claim.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Generate two-class data with p = 2 in such a way that the classes are just barely linearly separable.
+
+```{r, warning=FALSE}
+library(e1071)
+library(ggplot2)
+library(dplyr)
+```
+```{r, warning=FALSE}
+set.seed(2520)
+
+x.pos = runif(450, 0, 90)
+y.pos = runif(450, x.pos + 10, 100)
+x.pos.ruido = runif(50, 20, 80)
+y.pos.ruido = 5/4 * (x.pos.ruido - 10) + 0.1
+
+x.neg = runif(450, 10, 100)
+y.neg = runif(450, 0, x.neg - 10)
+x.neg.ruido = runif(50, 20, 80)
+y.neg.ruido = 5/4 * (x.neg.ruido - 10) - 0.1
+
+x = c(x.pos, x.pos.ruido, x.neg, x.neg.ruido)
+y = c(y.pos, y.pos.ruido, y.neg, y.neg.ruido)
+
+positivos = seq(1, 500)
+z = rep(-1, 1000)
+z[positivos] = 1
+
+datos = data.frame(X = x, Y = y, z = as.factor(z))
+
+ggplot(data = datos, aes(x = X, y = Y, color = as.factor(z))) +
+  geom_point(size = 2) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+<span class="negrita_verde">Después de haber generado el conjunto de datos se puede ver como estos no pueden separarse claramente mediante una línea recta, ya que cualquier línea recta que se pase entre ellos para separar los datos tendrá clasificaciones erróneas de lado y lado de la recta.
+</span>
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Compute the cross-validation error rates for support vector classifiers with a range of cost values. How many training errors are misclassified for each value of cost considered, and how does this relate to the cross-validation errors obtained?
+
+```{r, warning=FALSE}
+set.seed(325)
+model.tuning <- tune(svm, z ~ ., data = datos, 
+               kernel = "linear", 
+               ranges = list(cost = c(0.01, 0.1, 1, 5, 10, 50, 100, 500, 1000,5000)))
+
+summary(model.tuning)
+ggplot(data = model.tuning$performances, aes(x = cost, y = error)) +
+  geom_line(color= "blue") +
+  geom_point(color="blue") +
+  labs(title = "Error de clasificación vs hiperparámetro C") +
+  theme_bw()
+```
+```{r, warning=FALSE}
+paste("El mejor modelo es el siguiente:")
+model.tuning$best.model
+```
+
+<span class="negrita_verde">Se puede ver como a medida que aumenta el valor del parámetro costo, el error de clasificación de entrenamiento disminuye. Siendo mínimo para el valor de c = 5000. El mejor modelo para estos datos con los parámetros evaluados es entonces cuando c = 5000 el cual según los resultados usa 49 vectores de soporte.
+</span>
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Generate an appropriate test data set, and compute the test errors corresponding to each of the values of cost considered. Which value of cost leads to the fewest test errors, and how does this compare to the values of cost that yield the fewest training errors and the fewest cross-validation errors?
+
+```{r}
+set.seed(2321)
+x.test = runif(1000, 0, 100)
+positivos = sample(1000, 500)
+y.test = rep(NA, 1000)
+for (i in positivos) {
+    y.test[i] = runif(1, x.test[i], 100)
+}
+for (i in setdiff(1:1000, positivos)) {
+    y.test[i] = runif(1, 0, x.test[i])
+}
+
+z.test = rep(-1, 1000)
+z.test[positivos] = 1
+datos.test = data.frame(X = x.test, Y = y.test, z = as.factor(z.test))
+
+ggplot(data = datos.test, aes(x = x.test, y = y.test, color = as.factor(z.test))) +
+  geom_point(size = 2) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+<span class="negrita_verde">Ahora si se ve una clara separacion lineal entre este conjunto de datos.
+</span>
+
+```{r}
+costos = c(0.01, 0.1, 1, 5, 10, 50, 100, 500,1000)
+mal.clasificadas = rep(NA, length(costos))
+errores.test = rep(NA, length(costos))
+for (i in 1:length(costos)) {
+    svm.fit = svm(z ~ ., data = datos, kernel = "linear", cost = costos[i])
+    svm.predict = predict(svm.fit, datos.test)
+    mal.clasificadas[i] = sum(svm.predict !=datos.test$z)
+    errores.test[i] = mean(svm.predict != datos.test$z)*100
+}
+resultado = data.frame(costo = costos, mal_clasificadas = mal.clasificadas, porcentaje_error = errores.test)
+
+ggplot(data = resultado, aes(x = costo, y = mal.clasificadas)) +
+  geom_line(color= "green") +
+  geom_point(color="green") +
+  labs(title = "Error de clasificación vs Costo") +
+  theme_bw()
+
+resultado
+```
+
+<span class="negrita_verde">Se puede apreciar que en realidad no se necesita un valor del parámetro C tan alto para entrenar el modelo y hacer la respectiva evaluación con los datos de prueba. Basta solamente un valor de C = 5 o C = 10 en el entrenamiento del modelo para ver como este clasifica correctamente todos los datos de prueba.
+</span>
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Discuss your results.
+
+<span class="negrita_verde">Lo que ha ocurrido con este ejercicio en primera instancia, cuando se entrenó el modelo con valores altos para el parámetro Costo, es que como bien se sabe al ser este mayor, mayor es el margen del hiperplano creado por lo que dejará pasar más puntos ruidosos que intentará clasificar, por tanto a medida que crecía el valor de C lo que pasaba era que el modelo se ajustaba más a los datos, es decir, se presentaba overfitting. Por tanto un margen relativamente bueno que no deja pasar tantos puntos ruidosos, que no genera overfitting y que hace excelentes predicciones sobre los datos de prueba es el que se genera con un modelo usando C = 5. A continuación se presenta gráficamente el mejor hiperplano para este problema.
+</span>
+
+```{r, warning=FALSE}
+#PRIMERA FORMA DE GRAFICAR EL MODELO FORMA BASICA
+svm.5 = svm(z ~ ., data = datos, kernel = "linear", cost = 5)
+plot(svm.5, datos)
+
+#SEGUNDA FORMA DE GRAFICAR EL MODELO
+predicciones = predict(svm.5, datos.test)
+
+# Se almacenan los puntos predichos para dar color a las regiones
+color_regiones = data.frame(datos.test, y = predicciones)
+beta = drop(t(svm.5$coefs) %*% as.matrix(datos[,c("X","Y")])[svm.5$index,])
+beta0 = svm.5$rho
+
+# Representación de las 2 regiones empleando los puntos y coloreándolos
+ggplot() +
+  geom_point(data = color_regiones, aes(x = Y, y = X, color = as.factor(y)),size = 4) +
+  # Se añaden las observaciones iniciales
+  geom_point(data = datos, aes(x = Y, y = X, color = as.factor(z)),size = 2) +
+  # Se identifican aquellas observaciones que son vectores soporte del modelo
+  geom_point(data = datos[svm.5$index, ],
+             aes(x = Y, y = X, color = as.factor(z)),
+             shape = 21, colour = "black",
+             size = 10) +
+  # Se añaden las rectas del hiperplano y los márgenes
+  geom_abline(intercept = beta0/beta[2], slope = -beta[1]/beta[2]) +
+  geom_abline(intercept = (beta0 - 1)/beta[2], slope = -beta[1]/beta[2],
+              linetype = "dashed") +    
+  geom_abline(intercept = (beta0 + 1)/beta[2], slope = -beta[1]/beta[2],
+              linetype = "dashed") +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+
+## <span class="titulo_ejercicio">Ejercicio 7</span> {.letra}
+
+In this problem, you will use support vector approaches in order to predict whether a given car gets high or low gas mileage based on the Auto data set.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Create a binary variable that takes on a 1 for cars with gas mileage above the median, and a 0 for cars with gas mileage below the median.
+
+```{r, warning=FALSE}
+library(ISLR)
+library(e1071)
+mediana = median(Auto$mpg)
+nivel.gasol = ifelse(Auto$mpg > mediana, 1, 0)
+Auto$nivel.gasol = as.factor(nivel.gasol)
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Fit a support vector classifier to the data with various values of cost, in order to predict whether a car gets high or low gas mileage. Report the cross-validation errors associated with different values of this parameter. Comment on your results.
+
+```{r}
+set.seed(2000)
+tuning.lineal = tune(svm, nivel.gasol ~ ., data = Auto, kernel = "linear", 
+              ranges = list(cost = c(0.001, 0.01,0.1, 1, 5, 10, 20, 30)),
+              scale = TRUE)
+
+summary(tuning.lineal)
+ggplot(data = tuning.lineal$performances, aes(x = cost, y = error)) +
+  geom_line(color= "cyan4") +
+  geom_point(color="cyan4") +
+  labs(title = "Error de clasificación vs parametro C") +
+  theme_bw()
+```
+
+```{r, warning=FALSE}
+paste("EL MEJOR MODELO ESTÁ CONFIGURADO DE LA SIGUIENTE FORMA:")
+summary(tuning.lineal$best.model)
+```
+
+<span class="negrita_verde">Desde C = 0.001 hasta C = 1 el error decrece hasta alcanzar su mínimo igual a **0.01275641** justo en C = 1. A partir de C > 1 el error del modelo crece, pero de forma lenta. La mejor configuración para este modelo es entonces con C = 1, lo que crea un modelo con 56 vectores de soporte, 26 pertenecientes a una clase y los otros 30 a la otra clase.
+</span>
+
+
+### <span class="negrita_azul">(c)</span> {.letra}
+Now repeat (b), this time using SVMs with radial and polynomial basis kernels, with different values of gamma and degree and cost. Comment on your results.
+
+```{r}
+set.seed(500)
+tuning.poli = tune(svm, nivel.gasol ~ ., data = Auto, kernel = "polynomial", 
+                    ranges = list(cost = c(0.1, 1, 5, 10, 15, 20),
+                    degree = c(2, 3, 4)),
+                    scale = TRUE)
+summary(tuning.poli)
+
+ggplot(data = tuning.poli$performances, aes(x = cost, y = error, col = as.factor(degree))) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Error de clasificación vs parametro c y grado polinomio") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw() + theme(legend.position = "bottom")
+```
+
+```{r, warning=FALSE}
+paste("EL MEJOR MODELO ESTÁ CONFIGURADO DE LA SIGUIENTE FORMA:")
+summary(tuning.poli$best.model)
+```
+
+<span class="negrita_verde">El error minimo es de **0.4345513** y se alcanza cuando el grado del polinomio es 2 y el costo es 20. El modelos svm configurado asi, es decir, con cost = 20 y grado = 2 usa 384 vectores de soporte repartiendo 192 para cada una de las clases. De la grafica se puede ver tambien que para un grado > 2 el error no disminuye sin importar el valor del parametro costo.
+</span>
+
+```{r}
+set.seed(600)
+tuning.radial = tune(svm, nivel.gasol ~ ., data = Auto, kernel = "radial", 
+                    ranges = list(cost = c(0.1, 1, 5, 10,20), 
+                    gamma = c(0.01, 0.1, 1, 5, 10, 20,50)))
+summary(tuning.radial)
+
+ggplot(data = tuning.radial$performances, aes(x = cost, y = error, color = factor(gamma))) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Error de Clasificación vs parametros C y gamma") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position = "bottom")
+```
+
+```{r, warning=FALSE}
+paste("EL MEJOR MODELO ESTÁ CONFIGURADO DE LA SIGUIENTE FORMA:")
+summary(tuning.radial$best.model)
+```
+
+<span class="negrita_verde">Para el caso radial el error minimo es de **0.01525641** que se obtiene cuando costo = 20 y gamma = 0.01. El modelo SVM configurado con estos parametros usa 72 vectores de soporte de los cuales 35 pertenecen a una clase y 37 a la otra. El modelo radial configurado así es que menor error presentó de entre los tres tipos de kernel, por tanto es el mejor modelo.
+</span>
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Make some plots to back up your assertions in (b) and (c).
+
+*Hint: In the lab, we used the plot() function for svm objects only in cases with p = 2. When p > 2, you can use the plot() function to create plots displaying pairs of variables at a time. Essentially, instead of typing*
+
+> plot(svmfit , dat)
+
+*where svmfit contains your fitted model and dat is a data frame containing your data, you can type*
+
+> plot(svmfit , dat , x1∼x4)
+
+*in order to plot just the first and fourth variables. However, you must replace x1 and x4 with the correct variable names. To find out more, type ?plot.svm.*
+
+<span class="negrita_verde">ALGUNAS GRAFICAS CON EL MEJOR MODELO SVM LINEAL</span>
+
+```{r, echo=FALSE}
+#mpg y displacement
+datos = Auto[,c("mpg", "displacement", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = displacement, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.lineal$best.model$index, ],
+           aes(x = mpg, y = displacement, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 5) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray8', colour='gray8'))
+
+#mpg y horsepower
+datos = Auto[,c("mpg", "horsepower", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = horsepower, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.lineal$best.model$index, ],
+           aes(x = mpg, y = horsepower, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 5) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray8', colour='gray8'))
+
+#mpg y year
+datos = Auto[,c("mpg", "year", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = year, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.lineal$best.model$index, ],
+           aes(x = mpg, y = year, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 5) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray8', colour='gray8'))
+
+#mpg y acceleration
+datos = Auto[,c("mpg", "acceleration", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = acceleration, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.lineal$best.model$index, ],
+           aes(x = mpg, y = acceleration, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 5) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray8', colour='gray8'))
+```
+
+<span class="negrita_verde">ALGUNAS GRAFICAS CON EL MEJOR MODELO SVM POLINOMIAL</span>
+
+```{r, echo=FALSE}
+#mpg y displacement
+datos = Auto[,c("mpg", "displacement", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = displacement, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.poli$best.model$index, ],
+           aes(x = mpg, y = displacement, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 3) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray36', colour='gray36'))
+
+#mpg y horsepower
+datos = Auto[,c("mpg", "horsepower", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = horsepower, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.poli$best.model$index, ],
+           aes(x = mpg, y = horsepower, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 3) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray36', colour='gray36'))
+
+#mpg y year
+datos = Auto[,c("mpg", "year", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = year, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.poli$best.model$index, ],
+           aes(x = mpg, y = year, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 3) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray36', colour='gray36'))
+
+#mpg y acceleration
+datos = Auto[,c("mpg", "acceleration", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = acceleration, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.poli$best.model$index, ],
+           aes(x = mpg, y = acceleration, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 3) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='gray36', colour='gray36'))
+```
+
+<span class="negrita_verde">ALGUNAS GRAFICAS CON EL MEJOR MODELO SVM RADIAL</span>
+
+```{r, echo=FALSE}
+#mpg y displacement
+datos = Auto[,c("mpg", "displacement", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = displacement, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.radial$best.model$index, ],
+           aes(x = mpg, y = displacement, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 4) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='midnightblue', colour='midnightblue'))
+
+#mpg y horsepower
+datos = Auto[,c("mpg", "horsepower", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = horsepower, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.radial$best.model$index, ],
+           aes(x = mpg, y = horsepower, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 4) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='midnightblue', colour='midnightblue'))
+
+#mpg y year
+datos = Auto[,c("mpg", "year", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = year, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.radial$best.model$index, ],
+           aes(x = mpg, y = year, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 4) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='midnightblue', colour='midnightblue'))
+
+#mpg y acceleration
+datos = Auto[,c("mpg", "acceleration", "nivel.gasol")]
+ggplot() +
+geom_point(data = datos, aes(x = mpg, y = acceleration, color = nivel.gasol), size = 3) +
+geom_point(data = datos[tuning.radial$best.model$index, ],
+           aes(x = mpg, y = acceleration, color = nivel.gasol),
+           shape = 21, colour = "yellow",
+           size = 4) +
+theme(plot.title = element_text(hjust = 0.5)) +
+theme_bw() + theme(legend.position = "top") +
+theme(panel.background = element_rect(fill='midnightblue', colour='midnightblue'))
+```
+
+## <span class="titulo_ejercicio">Ejercicio 8</span> {.letra}
+
+This problem involves the OJ data set which is part of the ISLR package.
+
+### <span class="negrita_azul">(a)</span> {.letra}
+Create a training set containing a random sample of 800 observations, and a test set containing the remaining observations.
+
+```{r, warning=FALSE}
+library(ISLR)
+library(e1071)
+library(ggplot2)
+set.seed(700)
+train = sample(nrow(OJ), 800)
+OJ.train = OJ[train, ]
+OJ.test = OJ[-train, ]
+```
+
+### <span class="negrita_azul">(b)</span> {.letra}
+Fit a support vector classifier to the training data using
+cost=0.01, with Purchase as the response and the other variables
+as predictors. Use the summary() function to produce summary
+statistics, and describe the results obtained.
+
+```{r}
+svm.lineal = svm(Purchase ~ ., kernel = "linear", data = OJ.train, cost = 0.01)
+summary(svm.lineal)
+```
+
+<span class="negrita_verde">El SVM lineal creado usa 444 de las 800 observaciones como vectores de soporte, 223 son de la clase CH y 221 son de la clase MM, es una distribución bastante equitativa.
+</span>
+
+### <span class="negrita_azul">(c)</span> {.letra}
+What are the training and test error rates?
+
+```{r}
+predic.train = predict(svm.lineal, OJ.train)
+table(predicho = predic.train, real = OJ.train$Purchase)
+error.train = round(mean(predic.train != OJ.train$Purchase),4)
+paste("EL TRAIN ERROR ES DE:", error.train)
+```
+
+
+```{r}
+predic.test = predict(svm.lineal, OJ.test)
+table(predicho = predic.test, OJ.test$Purchase)
+error.test = round(mean(predic.test != OJ.test$Purchase),4)
+paste("EL TEST ERROR ES DE:", error.test)
+```
+
+### <span class="negrita_azul">(d)</span> {.letra}
+Use the tune() function to select an optimal cost. Consider values
+in the range 0.01 to 10.
+
+```{r}
+set.seed(200)
+model.tuning = tune(svm, Purchase ~ ., data = OJ.train, kernel = "linear", 
+                    ranges = list(cost = 10^seq(-2, 1, by = 0.25)))
+summary(model.tuning)
+
+ggplot(data = model.tuning$performances, aes(x = cost, y = error)) +
+  geom_line(color = "steelblue1") +
+  geom_point(color = "red") +
+  labs(title = "Error de clasificación vs costo") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+### <span class="negrita_azul">(e)</span> {.letra}
+Compute the training and test error rates using this new value
+for cost.
+
+<span class="negrita_verde">Al optimizar el parametro se genera de forma automatica un modelo con los mejores parametros. El cual se encuentra resumido a continuación.
+</span>
+
+```{r, warning=FALSE}
+model.tuning$best.model
+```
+
+```{r}
+mejor.svm.lineal = svm(Purchase ~ ., kernel = "linear", data = OJ.train, 
+                       cost =model.tuning$best.parameters$cost)
+predic.train = predict(mejor.svm.lineal, OJ.train)
+table(predicho = predic.train, real = OJ.train$Purchase)
+error.train = round(mean(predic.train != OJ.train$Purchase),4)
+paste("EL TRAIN ERROR CON EL MEJOR SVM LINEAL ES DE:", error.train)
+```
+```{r}
+predic.test = predict(mejor.svm.lineal, OJ.test)
+table(predicho = predic.test, real = OJ.test$Purchase)
+error.test = round(mean(predic.test != OJ.test$Purchase),4)
+paste("EL TEST ERROR CON EL MEJOR SVM LINEAL ES DE:", error.test)
+```
+
+### <span class="negrita_azul">(f)</span> {.letra}
+Repeat parts (b) through (e) using a support vector machine
+with a radial kernel. Use the default value for gamma.
+
+```{r}
+set.seed(600)
+svm.radial = svm(Purchase ~ ., data = OJ.train, kernel = "radial")
+summary(svm.radial)
+```
+<span class="negrita_verde">Usando el valor por defecto para el kernel radial se crea un SVM que usa 368 observaciones como vectores de soporte, usa de a 184 para cada clase.
+</span>
+
+```{r}
+predic.train = predict(svm.radial, OJ.train)
+table(predicho = predic.train, real = OJ.train$Purchase)
+error.train = round(mean(predic.train != OJ.train$Purchase),4)
+paste("EL TRAIN ERROR ES DE:", error.train)
+```
+
+```{r}
+predic.test = predict(svm.radial, OJ.test)
+table(predicho = predic.test, real = OJ.test$Purchase)
+error.test = round(mean(predic.test != OJ.test$Purchase),4)
+paste("EL TEST ERROR ES DE:", error.test)
+```
+
+```{r}
+set.seed(400)
+tuning.radial = tune(svm, Purchase ~ ., data = OJ.train, kernel = "radial",
+                     ranges = list(cost = 10^seq(-2, 1, by = 0.25)))
+summary(tuning.radial)
+
+ggplot(data = tuning.radial$performances, aes(x = cost, y = error)) +
+  geom_line(color = "steelblue1") +
+  geom_point(color = "green") +
+  labs(title = "Error de clasificación vs costo") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+```{r}
+mejor.svm.radial = svm(Purchase ~ ., data = OJ.train, kernel = "radial", 
+                       cost = tuning.radial$best.parameters$cost)
+
+predic.train = predict(mejor.svm.radial, OJ.train)
+table(predicho = predic.train, real = OJ.train$Purchase)
+error.train = round(mean(predic.train != OJ.train$Purchase),4)
+paste("EL TRAIN ERROR CON EL MEJOR SVM RADIAL ES DE:", error.train)
+```
+
+```{r}
+predic.test = predict(mejor.svm.radial, OJ.test)
+table(predicho = predic.test, real = OJ.test$Purchase)
+error.test = round(mean(predic.test != OJ.test$Purchase),4)
+paste("EL TEST ERROR CON EL MEJOR SVM RADIAL ES DE:", error.test)
+```
+
+### <span class="negrita_azul">(g)</span> {.letra}
+Repeat parts (b) through (e) using a support vector machine
+with a polynomial kernel. Set degree=2.
+
+```{r}
+set.seed(1100)
+svm.poly = svm(Purchase ~ ., data = OJ.train, kernel = "poly", degree = 2)
+summary(svm.poly)
+```
+
+<span class="negrita_verde">El SVM polinomial inicial con grado = 2 usa 449 vectores de soporte distribuidos en 228 para la clase CH y 221 para la clase MM.
+</span>
+
+```{r}
+predic.train = predict(svm.poly, OJ.train)
+table(predicho = predic.train, real = OJ.train$Purchase)
+error.train = round(mean(predic.train != OJ.train$Purchase),4)
+paste("EL TRAIN ERROR ES DE:", error.train)
+```
+
+```{r}
+predic.test = predict(svm.poly, OJ.test)
+table(predicho = predic.test, real = OJ.test$Purchase)
+error.test = round(mean(predic.test != OJ.test$Purchase),4)
+paste("EL TEST ERROR ES DE:", error.test)
+```
+
+
+```{r}
+set.seed(100)
+tuning.poli = tune(svm, Purchase ~ ., data = OJ.train, kernel = "poly", degree = 2, 
+    ranges = list(cost = 10^seq(-2, 1, by = 0.25)))
+summary(tuning.poli)
+
+ggplot(data = tuning.poli$performances, aes(x = cost, y = error)) +
+  geom_line(color = "tan3") +
+  geom_point(color = "seagreen") +
+  labs(title = "Error de clasificación vs costo") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+```{r}
+mejor.svm.poly = svm(Purchase ~ ., data = OJ.train, kernel = "poly", degree = 2, 
+                     cost = tuning.poli$best.parameters$cost)
+
+predic.train = predict(mejor.svm.poly, OJ.train)
+table(predicho = predic.train, real = OJ.train$Purchase)
+error.train = round(mean(predic.train != OJ.train$Purchase),4)
+paste("EL TRAIN ERROR CON EL MEJOR SVM POLINOMIAL ES DE:", error.train)
+```
+
+```{r}
+predic.test = predict(mejor.svm.poly, OJ.test)
+table(predicho = predic.test, real = OJ.test$Purchase)
+error.test = round(mean(predic.test != OJ.test$Purchase),4)
+paste("EL TEST ERROR CON EL MEJOR SVM POLINOMIAL ES DE:", error.test)
+```
+
+### <span class="negrita_azul">(h)</span> {.letra}
+Overall, which approach seems to give the best results on this
+data?
+
+<span class="negrita_verde">Con los modelos calibrados se ve que para este conjunto de datos quien presenta un mejor rendimiento para los datos de entrenamiento es el SVM polinomial. Sin embargo quien presenta mejor rendimiento con los datos de prueba es el SVM lineal.
+</span>
+

@@ -1,0 +1,72 @@
+
+.title {
+  font-size: 38px;
+  color: DarkRed;
+  text-align: center;
+}
+.author {
+    font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkRed;
+  text-align: center;
+}
+.date {
+  font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkBlue;
+  text-align: center;
+}
+
+.place {
+  font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkBlue;
+  text-align: center;
+}
+
+.letra{
+  color:black;
+  text-align: justify;
+}
+
+#cap4_7 {
+  text-align: center;
+}
+
+#cap8_4 {
+  text-align: center;
+}
+
+#cap9_7 {
+  text-align: center;
+}
+
+.titulo_capitulo{
+  color:white;
+  text-align: center;
+  width: 100%;
+  background-color: teal;
+}
+
+.titulo_ejercicio{
+  color:black;
+}
+
+.negrita{
+  font-weight: bold;
+}
+
+.negrita_azul{
+  color: darkblue;
+  font-weight: bold;
+}
+
+.negrita_verde{
+  color: darkgreen;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.texto_rojo{
+  color: red;
+}
